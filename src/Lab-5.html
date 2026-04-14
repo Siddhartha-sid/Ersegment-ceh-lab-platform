@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Enumeration</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        .service-card {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Module 4: Enumeration</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Extract usernames, machine names, shares, and services from target systems.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Enumeration Tools</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🔍 What is Enumeration?</h2>
+                    <p>Enumeration is the third phase of ethical hacking. It involves actively connecting to a target system to gather detailed information such as:</p>
+                    <ul style="margin-left:20px;">
+                        <li>Valid usernames and group memberships</li>
+                        <li>Network shares and resources</li>
+                        <li>Running services and their versions</li>
+                        <li>Operating system details</li>
+                        <li>SNMP community strings</li>
+                        <li>DNS zone transfers</li>
+                    </ul>
+                    <p><strong>Key Difference from Scanning:</strong> Enumeration extracts detailed, actionable information by probing services directly.</p>
+                </div>
+                <div class="card">
+                    <h2>📡 Common Enumeration Services</h2>
+                    <div class="service-card"><strong>NetBIOS (Port 139/445)</strong> — Windows shares, users, groups via <code>nbtscan</code>, <code>enum4linux</code></div>
+                    <div class="service-card"><strong>SMB (Port 445)</strong> — File shares, permissions with <code>smbclient</code>, <code>smbmap</code></div>
+                    <div class="service-card"><strong>SNMP (Port 161/162 UDP)</strong> — Network device info using <code>snmpwalk</code></div>
+                    <div class="service-card"><strong>LDAP (Port 389/636)</strong> — Directory services enumeration with <code>ldapsearch</code></div>
+                    <div class="service-card"><strong>SMTP (Port 25)</strong> — User verification via VRFY/EXPN commands</div>
+                    <div class="service-card"><strong>DNS (Port 53)</strong> — Zone transfers, subdomain brute-force</div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>⚠️ Important Note</h2>
+                <p>Enumeration often requires valid credentials or misconfigured services. Always obtain written permission before conducting enumeration activities. Unauthorized enumeration may be considered illegal.</p>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL TAB ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧰 Enumeration Tools Simulator</h2>
+                <p>Practice enumerating a target Windows/Linux system: <code>enum-demo.local (10.0.0.50)</code></p>
+                
+                <div class="toolbar">
+                    <button class="btn" data-enum="netbios">📡 NetBIOS Enum</button>
+                    <button class="btn" data-enum="smb">📁 SMB Shares</button>
+                    <button class="btn" data-enum="snmp">🔧 SNMP Walk</button>
+                    <button class="btn" data-enum="ldap">👥 LDAP Search</button>
+                    <button class="btn" data-enum="smtp">📧 SMTP Users</button>
+                    <button class="btn" data-enum="dns">🌐 DNS Zone Transfer</button>
+                    <button class="btn btn-primary" onclick="openTerminal()">💻 Full Terminal</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="enum-output">Select an enumeration tool to see simulated results.</div>
+                    <div class="command-input">
+                        <input type="text" id="custom-enum" placeholder="e.g., enum4linux enum-demo.local" value="enum4linux enum-demo.local">
+                        <button class="btn btn-primary" id="run-custom">Run</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📊 Interpreting Results</h2>
+                <h3>NetBIOS / SMB Enumeration</h3>
+                <p>Use <code>enum4linux</code> to extract:</p>
+                <ul style="margin-left:20px;">
+                    <li>User accounts (local and domain)</li>
+                    <li>Group memberships</li>
+                    <li>Password policy</li>
+                    <li>Available shares</li>
+                </ul>
+                <div class="toolbar">
+                    <button class="btn" data-interpret="users">List Users</button>
+                    <button class="btn" data-interpret="shares">List Shares</button>
+                    <button class="btn" data-interpret="policy">Password Policy</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="interpret-output">Click a button to see example enumeration output.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE TAB ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Enumeration</h2>
+                <p>Your mission: Enumerate the target <code>ctf-corp.local (172.16.0.25)</code> to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Intelligence Brief:</strong></p>
+                    <ul>
+                        <li>Flag 1: Hidden in an SMB share accessible as guest</li>
+                        <li>Flag 2: Contained in a user's description field (LDAP)</li>
+                        <li>Flag 3: Found via SNMP community string "public"</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Your Enumeration Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="netbios">NetBIOS Enum</button>
+                    <button class="btn" data-ctf="smb">SMB Enum</button>
+                    <button class="btn" data-ctf="ldap">LDAP Search</button>
+                    <button class="btn" data-ctf="snmp">SNMP Walk</button>
+                    <button class="btn" data-ctf="smtp">SMTP VRFY</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Execute enumeration commands to gather flags.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (SMB):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (LDAP):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (SNMP):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ TAB ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            // State
+            let sessionId = localStorage.getItem('lab4_session') || 'lab4-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab4_session', sessionId);
+            let progress = { theory: true, practical: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 4) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== PRACTICAL ENUMERATION ==========
+            const enumResults = {
+                netbios: `nbtscan 10.0.0.50\nDoing NBT name scan for 10.0.0.50...\nIP address       NetBIOS Name     Server    User             MAC address      \n------------------------------------------------------------------------------\n10.0.0.50        ENUM-DEMO        <server>  <unknown>        00:0c:29:ab:cd:ef\n10.0.0.50        ENUM-DEMO        <20>      <unique>         00:0c:29:ab:cd:ef\n10.0.0.50        WORKGROUP        <00>      <group>          00:0c:29:ab:cd:ef`,
+                smb: `smbclient -L //10.0.0.50 -N\nSharename       Type      Comment\n---------       ----      -------\nADMIN$          Disk      Remote Admin\nC$              Disk      Default share\nIPC$            IPC       Remote IPC\nPublic          Disk      Public files\nUsers           Disk      User directories`,
+                snmp: `snmpwalk -v1 -c public 10.0.0.50 .1.3.6.1.2.1.1.5.0\niso.3.6.1.2.1.1.5.0 = STRING: "enum-demo.local"\nsnmpwalk -v1 -c public 10.0.0.50 .1.3.6.1.2.1.25.4.2.1.2\n... Running processes: sshd, httpd, mysqld`,
+                ldap: `ldapsearch -x -h 10.0.0.50 -b "dc=enum-demo,dc=local" "(objectclass=*)"\n# john.doe, Users, enum-demo.local\ndn: CN=John Doe,CN=Users,DC=enum-demo,DC=local\nsAMAccountName: jdoe\ndescription: IT Administrator`,
+                smtp: `smtp-user-enum -M VRFY -U users.txt -t 10.0.0.50\nChecking VRFY for root ... exists\nChecking VRFY for admin ... exists\nChecking VRFY for jdoe ... exists`,
+                dns: `dnsrecon -d enum-demo.local -t axfr\n[*] Testing NS Servers for Zone Transfer\n[*] Zone Transfer was successful!!\nHost: www.enum-demo.local  A   10.0.0.50\nHost: mail.enum-demo.local A   10.0.0.55\nHost: db.enum-demo.local   A   10.0.0.60`
+            };
+            
+            function showEnum(type) {
+                document.getElementById('enum-output').textContent = enumResults[type] || 'Enumeration simulation not available.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Interpretation examples
+            const interpretData = {
+                users: `enum4linux -U 10.0.0.50\n[+] Getting user list:\nAdministrator (RID 500)\nGuest (RID 501)\njdoe (RID 1001) - John Doe (IT Admin)\nsmith (RID 1002) - Sarah Smith (HR)\nbackup_user (RID 1003) - Backup Service`,
+                shares: `enum4linux -S 10.0.0.50\n[+] Enumerating shares:\nShare: ADMIN$ (Remote Admin)\nShare: C$ (Default share)\nShare: Public (Readable by all)\nShare: IT_Share (Read/Write for IT group)`,
+                policy: `enum4linux -P 10.0.0.50\n[+] Password Policy Information:\nMinimum password length: 8\nPassword history length: 5\nMaximum password age: 42 days\nLockout threshold: 5 attempts`
+            };
+            
+            function showInterpret(type) {
+                document.getElementById('interpret-output').textContent = interpretData[type] || 'No example available.';
+            }
+            
+            // ========== CTF CHALLENGE ==========
+            const ctfResults = {
+                netbios: `NetBIOS scan 172.16.0.25...\nMachine: CTF-CORP\nWorkgroup: CORPNET\nMAC: 08:00:27:de:ad:be`,
+                smb: `SMB enumeration on 172.16.0.25...\nShare: Documents (Readable by guest)\nContents: \n  - company_policy.pdf\n  - flag.txt (contains FLAG{SMB_GUEST_ACCESS})`,
+                ldap: `LDAP search on 172.16.0.25...\nFound user: backup_svc (description: "Backup service account - FLAG{LDAP_DESCRIPTION_HIDDEN}")`,
+                snmp: `SNMP walk (public) on 172.16.0.25...\nSystem contact: admin@ctf-corp.local\nSystem location: Server Room - FLAG{SNMP_PUBLIC_STRING}`,
+                smtp: `SMTP VRFY scan...\nUser root exists.\nUser admin exists.\nNo flag in SMTP.`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfResults[cmd] || 'No result. Try different tool.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{SMB_GUEST_ACCESS}') correct++;
+                if (f2 === 'FLAG{LDAP_DESCRIPTION_HIDDEN}') correct++;
+                if (f3 === 'FLAG{SNMP_PUBLIC_STRING}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Congratulations! All flags captured. Excellent enumeration skills!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep enumerating!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which tool is commonly used for SMB/NetBIOS enumeration on Linux?", opts: ["nmap", "enum4linux", "hydra", "nikto"], ans: 1 },
+                { q: "What port does SNMP typically use?", opts: ["TCP 161", "UDP 161", "TCP 162", "UDP 162"], ans: 1 },
+                { q: "Which command can verify if a user exists on an SMTP server?", opts: ["VRFY", "EXPN", "RCPT TO", "All of the above"], ans: 3 },
+                { q: "What is required to perform a DNS zone transfer?", opts: ["AXFR query", "Valid credentials", "Open resolver", "All of the above"], ans: 0 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review enumeration concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            function openTerminal() { window.open(`/terminal?session=${sessionId}`, '_blank'); }
+            
+            // Attach event listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                // Enumeration tool buttons
+                document.querySelectorAll('[data-enum]').forEach(btn => {
+                    btn.addEventListener('click', () => showEnum(btn.dataset.enum));
+                });
+                document.querySelectorAll('[data-interpret]').forEach(btn => {
+                    btn.addEventListener('click', () => showInterpret(btn.dataset.interpret));
+                });
+                document.getElementById('run-custom').addEventListener('click', () => {
+                    const cmd = document.getElementById('custom-enum').value;
+                    document.getElementById('enum-output').textContent = `[Simulated] Executing: ${cmd}\n\n(This would run on the lab server.)`;
+                    progress.practical = true; updateProgress();
+                });
+                
+                // CTF buttons
+                document.querySelectorAll('[data-ctf]').forEach(btn => {
+                    btn.addEventListener('click', () => runCTF(btn.dataset.ctf));
+                });
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                
+                // Quiz
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                // Ensure session with backend (optional)
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = openTerminal;
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Social Engineering</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+        .btn-danger:hover { background: #c82333; box-shadow: 0 0 15px #dc3545; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .email-box {
+            background: #1a1f2e;
+            border-left: 4px solid #ffaa00;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .email-header {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Module 9: Social Engineering</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Manipulating human psychology to gain unauthorized access or information.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Techniques</button>
+            <button class="tab-btn" data-tab="phishing">🎣 Phishing Simulation</button>
+            <button class="tab-btn" data-tab="set">🛠️ SET Toolkit Demo</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🧠 Human-Based Social Engineering</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Pretexting:</strong> Creating a fabricated scenario to obtain information.</li>
+                        <li><strong>Baiting:</strong> Offering something enticing (e.g., free USB drive) to deliver malware.</li>
+                        <li><strong>Quid Pro Quo:</strong> Promising a service in exchange for information.</li>
+                        <li><strong>Tailgating:</strong> Following authorized personnel into restricted areas.</li>
+                        <li><strong>Vishing:</strong> Voice phishing over phone calls.</li>
+                        <li><strong>Impersonation:</strong> Pretending to be a trusted authority (IT support, CEO).</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>💻 Computer-Based Social Engineering</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Phishing:</strong> Mass emails with malicious links/attachments.</li>
+                        <li><strong>Spear Phishing:</strong> Targeted phishing at specific individuals.</li>
+                        <li><strong>Whaling:</strong> Phishing aimed at executives.</li>
+                        <li><strong>Clone Phishing:</strong> Resending a legitimate email with malicious replacement.</li>
+                        <li><strong>Watering Hole:</strong> Compromising websites frequented by targets.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Countermeasures</h2>
+                <table>
+                    <tr><th>Measure</th><th>Description</th></tr>
+                    <tr><td>Security Awareness Training</td><td>Regularly educate employees about social engineering tactics.</td></tr>
+                    <tr><td>Phishing Simulations</td><td>Test and reinforce awareness with mock campaigns.</td></tr>
+                    <tr><td>Multi-Factor Authentication</td><td>Mitigates credential theft.</td></tr>
+                    <tr><td>Strict Access Controls</td><td>Limits damage from successful attacks.</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PHISHING SIMULATION ==================== -->
+        <div id="phishing" class="tab-content">
+            <div class="card">
+                <h2>🎣 Analyze a Phishing Email</h2>
+                <p>Examine the email below and identify red flags that indicate it's a phishing attempt.</p>
+                
+                <div class="email-box">
+                    <div class="email-header">
+                        <strong>From:</strong> IT Support &lt;it-support@micros0ft-secure.com&gt;<br>
+                        <strong>Subject:</strong> URGENT: Your account will be deactivated<br>
+                        <strong>To:</strong> employee@company.com
+                    </div>
+                    <div style="margin-top:15px;">
+                        <p>Dear Valued Employee,</p>
+                        <p>We have detected unusual activity on your corporate account. To prevent deactivation, please verify your credentials immediately by clicking the link below:</p>
+                        <p><a href="#" style="color:#00ff88;" onclick="alert('Simulated phishing link: http://fake-microsoft-login.com'); return false;">https://office365-verify.com/login</a></p>
+                        <p>Failure to comply within 24 hours will result in permanent account suspension.</p>
+                        <p>Regards,<br>IT Security Team</p>
+                    </div>
+                </div>
+                
+                <h3>🔍 Red Flags Checklist</h3>
+                <div class="toolbar">
+                    <button class="btn" data-flag="sender">Check Sender Address</button>
+                    <button class="btn" data-flag="urgency">Check Urgency Language</button>
+                    <button class="btn" data-flag="link">Inspect Link</button>
+                    <button class="btn" data-flag="grammar">Check Grammar</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="phish-output">Click the buttons above to analyze each aspect of the email.</div>
+                </div>
+                
+                <p><strong>Found a flag?</strong> Enter it below:</p>
+                <input type="text" id="phish-flag" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px; margin-bottom:10px;">
+                <button class="btn btn-primary" id="submit-phish-flag">Submit Flag</button>
+                <div id="phish-result" style="margin-top:10px;"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== SET TOOLKIT DEMO ==================== -->
+        <div id="set" class="tab-content">
+            <div class="card">
+                <h2>🛠️ Social-Engineer Toolkit (SET) Simulation</h2>
+                <p>SET is a framework for automating social engineering attacks. Explore common modules.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🌐 Website Attack Vectors</h3>
+                        <button class="btn" data-set="cred-harvest">Credential Harvester</button>
+                        <button class="btn" data-set="tabnabbing">Tabnabbing Attack</button>
+                        <button class="btn" data-set="java-applet">Java Applet Attack</button>
+                    </div>
+                    <div>
+                        <h3>📧 Spear-Phishing Attack</h3>
+                        <button class="btn" data-set="mass-mail">Mass Mailer</button>
+                        <button class="btn" data-set="payload">Create Payload & Listener</button>
+                    </div>
+                </div>
+                
+                <div class="terminal-box" style="min-height:200px;">
+                    <div class="terminal-output" id="set-output">Select a SET module to see simulation output.</div>
+                </div>
+                
+                <h3>📝 Cloned Website Example</h3>
+                <p>SET clones a legitimate website to harvest credentials. View the simulated cloned login page:</p>
+                <button class="btn" data-set="preview">Preview Cloned Login Page</button>
+                <div class="terminal-box" style="margin-top:10px;">
+                    <div class="terminal-output" id="clone-output">Click to see what a victim would see.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Social Engineering Investigation</h2>
+                <p>You're a security analyst investigating a potential breach. Analyze the evidence to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Evidence Collected:</strong></p>
+                    <ul>
+                        <li>Email forwarded by an employee (phishing attempt)</li>
+                        <li>Voicemail transcript from a vishing call</li>
+                        <li>SET log file from a compromised training server</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Investigation Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="email">Analyze Email</button>
+                    <button class="btn" data-ctf="vmail">Analyze Voicemail Transcript</button>
+                    <button class="btn" data-ctf="setlog">View SET Log</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Click a button to examine evidence.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Phishing Link Domain):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (Vishing Caller's Pretext):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (SET Harvested Credential):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            let sessionId = localStorage.getItem('lab9_session') || 'lab9-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab9_session', sessionId);
+            let progress = { theory: true, phishing: false, set: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== PHISHING SIMULATION ==========
+            const flagHints = {
+                sender: `Sender address: it-support@micros0ft-secure.com\nNotice the '0' instead of 'o' in micros0ft? That's typosquatting.\nAlso, the domain is micros0ft-secure.com, not microsoft.com.\nFlag: FLAG{TYPOSQUATTING_DOMAIN}`,
+                urgency: `Subject: URGENT: Your account will be deactivated\nPhishing emails often create a false sense of urgency to bypass rational thinking.\nFlag: FLAG{URGENCY_TACTIC}`,
+                link: `Hover over the link (or inspect): http://fake-microsoft-login.com\nIt does NOT go to office365.com. Always check the actual URL.\nFlag: FLAG{MISMATCHED_URL}`,
+                grammar: `"Please to verify your credentials" - slightly off grammar.\nAlso, "Regards, IT Security Team" is generic and not signed by a specific person.\nFlag: FLAG{POOR_GRAMMAR}`
+            };
+            
+            function showFlag(type) {
+                document.getElementById('phish-output').textContent = flagHints[type] || 'No analysis.';
+            }
+            
+            function submitPhishFlag() {
+                const input = document.getElementById('phish-flag').value.trim();
+                const validFlags = ['FLAG{TYPOSQUATTING_DOMAIN}', 'FLAG{URGENCY_TACTIC}', 'FLAG{MISMATCHED_URL}', 'FLAG{POOR_GRAMMAR}'];
+                const res = document.getElementById('phish-result');
+                if (validFlags.includes(input)) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Correct! Phishing red flag identified.</span>';
+                    progress.phishing = true;
+                    updateProgress();
+                } else {
+                    res.innerHTML = '<span style="color:#ff5555;">❌ Not a valid flag. Check the analysis for flags.</span>';
+                }
+            }
+            
+            // ========== SET SIMULATION ==========
+            const setOutputs = {
+                'cred-harvest': `setoolkit> 1 (Social-Engineering Attacks)\n> 2 (Website Attack Vectors)\n> 3 (Credential Harvester)\n[*] Cloning https://example.com/login\n[*] Credentials will be logged to /var/www/html/harvester.log\n[*] Send phishing link to target: http://192.168.1.100/`,
+                'tabnabbing': `[*] Tabnabbing attack: When user switches tabs, the original page changes to a fake login.\n[*] JavaScript payload injected.`,
+                'java-applet': `[*] Java Applet Attack: Prompts user to run a malicious Java applet.\n[*] Signed applet will execute payload.`,
+                'mass-mail': `[*] Mass Mailer Attack\n[*] Importing email list...\n[*] Sending spear-phishing emails with malicious attachment.`,
+                'payload': `[*] Creating payload with msfvenom\n[*] Payload: windows/meterpreter/reverse_tcp\n[*] Starting listener on port 443.`,
+                'preview': `[Cloned Page Preview]\n================================\n       Example Login\n    [________________] Username\n    [________________] Password\n    [  Sign In  ]\n================================\n(Users enter credentials, which are logged)`
+            };
+            
+            function showSet(cmd) {
+                document.getElementById('set-output').textContent = setOutputs[cmd] || 'SET module simulation.';
+                if (cmd === 'preview') {
+                    document.getElementById('clone-output').textContent = setOutputs.preview;
+                }
+                progress.set = true;
+                updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOutputs = {
+                email: `[Phishing Email Analysis]\nFrom: payroll@company-secure.co (note .co TLD)\nSubject: Important: Update Your Direct Deposit\nLink: http://company-secure.co/portal (actual domain differs)\nFlag in domain: FLAG{COMPANY_SECURE_CO}`,
+                vmail: `[Voicemail Transcript]\n"Hello, this is Mark from IT Security. We've detected a virus on your machine. Please call me back immediately at 555-0199 and provide your username and password so we can clean it."\nPretext: "IT Support" with urgency.\nFlag: FLAG{IT_SUPPORT_PRETEXT}`,
+                setlog: `[SET Harvester Log]\n[2024-01-15 10:23] IP: 192.168.1.50\nPOST /login HTTP/1.1\nusername=jsmith&password=Summer2024!\nFlag: FLAG{SUMMER2024_CREDENTIAL}`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOutputs[cmd] || 'No evidence.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{COMPANY_SECURE_CO}') correct++;
+                if (f2 === 'FLAG{IT_SUPPORT_PRETEXT}') correct++;
+                if (f3 === 'FLAG{SUMMER2024_CREDENTIAL}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Excellent investigation! All flags found.</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep analyzing!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which type of phishing targets high-level executives?", opts: ["Spear phishing", "Whaling", "Clone phishing", "Vishing"], ans: 1 },
+                { q: "What does SET stand for?", opts: ["Security Exploit Toolkit", "Social-Engineer Toolkit", "System Enumeration Tool", "Secure Email Transport"], ans: 1 },
+                { q: "Which social engineering technique involves following someone into a restricted area?", opts: ["Pretexting", "Baiting", "Tailgating", "Quid pro quo"], ans: 2 },
+                { q: "What is the best defense against social engineering?", opts: ["Strong passwords", "Multi-factor authentication", "Security awareness training", "Firewall"], ans: 2 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review social engineering concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-flag]').forEach(btn => btn.addEventListener('click', () => showFlag(btn.dataset.flag)));
+                document.getElementById('submit-phish-flag').addEventListener('click', submitPhishFlag);
+                document.querySelectorAll('[data-set]').forEach(btn => btn.addEventListener('click', () => showSet(btn.dataset.set)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

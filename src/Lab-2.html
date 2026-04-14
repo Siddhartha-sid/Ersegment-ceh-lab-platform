@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Introduction to Ethical Hacking</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            color: #00b4ff;
+            margin: 1rem 0;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            box-shadow: var(--border-glow);
+            transform: translateY(-2px);
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        
+        .btn-primary:hover {
+            background: #00cc6a;
+            box-shadow: 0 0 20px #00ff88;
+        }
+        
+        .btn:hover {
+            background: #2a3a5c;
+        }
+        
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .phase-timeline {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .phase {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 15px 5px;
+            background: #1e2a4a;
+            margin: 2px;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .phase.active {
+            background: var(--primary);
+            color: #0a0f1e;
+            font-weight: bold;
+            box-shadow: 0 0 20px #00ff88;
+        }
+        
+        .cia-demo {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .cia-item {
+            flex: 1;
+            min-width: 180px;
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .quiz-option:hover {
+            background: #1e2a4a;
+        }
+        
+        .quiz-option.correct {
+            background: #00ff8822;
+            border-left: 4px solid #00ff88;
+        }
+        
+        .quiz-option.wrong {
+            background: #ff555522;
+            border-left: 4px solid #ff5555;
+        }
+        
+        .progress {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Module 1: Introduction to Ethical Hacking</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Understanding the fundamentals of information security and the hacker mindset.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs for Organization -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🖥️ Practical Exercises</button>
+            <button class="tab-btn" data-tab="challenge">🚩 Mini CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🔐 The CIA Triad</h2>
+                    <p>The foundation of information security. Every security control aims to protect one or more of these properties.</p>
+                    
+                    <div class="cia-demo">
+                        <div class="cia-item">
+                            <h3>🔒 Confidentiality</h3>
+                            <p>Ensuring data is accessible only to authorized users.</p>
+                            <p><strong>Demo:</strong> Encrypt a message</p>
+                            <input type="text" id="conf-input" placeholder="Enter secret message" style="width:100%; padding:8px; margin:5px 0; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                            <button class="btn btn-primary" onclick="encryptDemo()">Encrypt (Base64)</button>
+                            <div class="terminal-box" style="margin-top:10px;">
+                                <div id="encrypt-output">Encrypted text will appear here</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cia-item">
+                            <h3>📝 Integrity</h3>
+                            <p>Ensuring data is accurate and unaltered.</p>
+                            <p><strong>Demo:</strong> Compute hash</p>
+                            <input type="text" id="hash-input" placeholder="Enter data" style="width:100%; padding:8px; margin:5px 0; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                            <button class="btn btn-primary" onclick="hashDemo()">Compute SHA-256</button>
+                            <div class="terminal-box" style="margin-top:10px;">
+                                <div id="hash-output" style="word-break:break-all;">Hash will appear here</div>
+                            </div>
+                        </div>
+                        
+                        <div class="cia-item">
+                            <h3>⏱️ Availability</h3>
+                            <p>Ensuring systems are accessible when needed.</p>
+                            <p><strong>Example:</strong> Redundancy, backups, DDoS protection.</p>
+                            <button class="btn btn-primary" onclick="showAvailabilityInfo()">Show Info</button>
+                            <div id="avail-info" style="margin-top:10px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>⚔️ Phases of Ethical Hacking</h2>
+                    <p>Ethical hackers follow a structured methodology to identify vulnerabilities.</p>
+                    
+                    <div class="phase-timeline">
+                        <div class="phase" data-phase="1">1️⃣ Reconnaissance</div>
+                        <div class="phase" data-phase="2">2️⃣ Scanning</div>
+                        <div class="phase" data-phase="3">3️⃣ Gaining Access</div>
+                        <div class="phase" data-phase="4">4️⃣ Maintaining Access</div>
+                        <div class="phase" data-phase="5">5️⃣ Covering Tracks</div>
+                    </div>
+                    
+                    <div id="phase-description" style="min-height:120px; padding:15px; background:#0d1117; border-radius:8px;">
+                        Click on a phase to see details.
+                    </div>
+                    
+                    <p style="margin-top:15px;"><strong>Key Takeaway:</strong> Always obtain written permission before testing. Unauthorized access is illegal.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📜 Essential Terminology</h2>
+                <ul style="columns:2; list-style-position:inside;">
+                    <li><strong>Vulnerability:</strong> Weakness in a system</li>
+                    <li><strong>Threat:</strong> Potential danger</li>
+                    <li><strong>Risk:</strong> Likelihood × Impact</li>
+                    <li><strong>Exploit:</strong> Code/technique to use vulnerability</li>
+                    <li><strong>Payload:</strong> Malicious code delivered</li>
+                    <li><strong>Zero-day:</strong> Unknown vulnerability</li>
+                    <li><strong>Penetration Testing:</strong> Simulated attack</li>
+                    <li><strong>Red Team/Blue Team:</strong> Offense/Defense</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL TAB ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🛠️ Hands‑On: Information Gathering</h2>
+                <p>Reconnaissance is the first phase of hacking. Use these tools to gather public information about a target domain.</p>
+                
+                <div class="toolbar">
+                    <button class="btn" onclick="runCommand('whois example.com')">🌐 WHOIS Lookup</button>
+                    <button class="btn" onclick="runCommand('dig example.com ANY')">🔍 DNS Enumeration</button>
+                    <button class="btn" onclick="runCommand('nmap -sn scanme.nmap.org')">📡 Ping Sweep</button>
+                    <button class="btn" onclick="runCommand('curl -I https://example.com')">📄 HTTP Headers</button>
+                    <button class="btn btn-primary" onclick="openTerminal()">💻 Open Full Terminal</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="practical-output">Click a button to execute a command. Results will appear here.</div>
+                    <div class="command-input">
+                        <input type="text" id="custom-command" placeholder="Try: whois google.com" value="whois example.com">
+                        <button class="btn btn-primary" onclick="runCustomCommand()">Run</button>
+                    </div>
+                </div>
+                
+                <p style="margin-top:10px;"><strong>Note:</strong> These commands are executed in a safe, isolated environment. For security, only reconnaissance tools are allowed.</p>
+            </div>
+            
+            <div class="card">
+                <h2>📊 Interpreting Results</h2>
+                <h3>WHOIS Output Analysis</h3>
+                <ul>
+                    <li><strong>Registrar:</strong> Company where domain was registered</li>
+                    <li><strong>Name Servers:</strong> DNS servers authoritative for the domain</li>
+                    <li><strong>Creation/Expiration Dates:</strong> Useful for social engineering</li>
+                    <li><strong>Registrant Contact:</strong> Often redacted for privacy (GDPR)</li>
+                </ul>
+                
+                <h3>DNS Records (dig)</h3>
+                <ul>
+                    <li><strong>A Record:</strong> IPv4 address</li>
+                    <li><strong>MX Record:</strong> Mail servers</li>
+                    <li><strong>TXT Record:</strong> Often contains SPF/DMARC policies</li>
+                    <li><strong>NS Record:</strong> Name servers</li>
+                </ul>
+                
+                <p><strong>Exercise:</strong> Use the terminal above to perform a WHOIS lookup on <code>tesla.com</code> and identify the registrar and name servers.</p>
+            </div>
+        </div>
+        
+        <!-- ==================== CHALLENGE TAB ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Reconnaissance Challenge</h2>
+                <p>Apply what you've learned to find the hidden flag. Use the terminal commands to gather information about the fictional target <code>secret-company.local</code>.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Scenario:</strong> You are an ethical hacker performing reconnaissance for a client. Your task is to find the flag hidden in public information about the domain <code>secret-company.local</code>.</p>
+                    <p><strong>Hints:</strong></p>
+                    <ul>
+                        <li>Use WHOIS to find registrar info</li>
+                        <li>Check DNS TXT records</li>
+                        <li>The flag format is <span class="flag">FLAG{...}</span></li>
+                    </ul>
+                </div>
+                
+                <div class="toolbar">
+                    <button class="btn" onclick="challengeCommand('whois secret-company.local')">WHOIS</button>
+                    <button class="btn" onclick="challengeCommand('dig secret-company.local TXT')">DNS TXT</button>
+                    <button class="btn" onclick="challengeCommand('dig secret-company.local ANY')">DNS ANY</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="challenge-output">Execute commands to gather intelligence.</div>
+                </div>
+                
+                <div style="margin:20px 0;">
+                    <label>Submit Flag:</label>
+                    <input type="text" id="flag-input" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    <button class="btn btn-primary" onclick="submitFlag()" style="margin-top:10px;">Submit Flag</button>
+                </div>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ TAB ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container">
+                    <!-- Quiz will be injected by JS -->
+                </div>
+                <button class="btn btn-primary" onclick="checkQuiz()">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        // ==================== GLOBAL FUNCTIONS ====================
+        
+        // Session ID (should be obtained from main app, but we'll generate a temporary one)
+        let sessionId = localStorage.getItem('lab_session_id');
+        if (!sessionId) {
+            sessionId = 'lab-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('lab_session_id', sessionId);
+        }
+        
+        // Progress tracking
+        let progress = {
+            theory: false,
+            practical: false,
+            challenge: false,
+            quiz: false
+        };
+        
+        function updateProgress() {
+            const completed = Object.values(progress).filter(v => v).length;
+            const percent = (completed / 4) * 100;
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = percent + '%';
+        }
+        
+        // ==================== THEORY FUNCTIONS ====================
+        
+        function encryptDemo() {
+            const input = document.getElementById('conf-input').value;
+            if (!input) {
+                document.getElementById('encrypt-output').textContent = 'Please enter a message.';
+                return;
+            }
+            // Simple Base64 encoding (simulates encryption)
+            const encoded = btoa(input);
+            document.getElementById('encrypt-output').innerHTML = `<strong>Encoded (Base64):</strong><br>${encoded}<br><small>In real world, use AES/RSA encryption.</small>`;
+            progress.theory = true;
+            updateProgress();
+        }
+        
+        function hashDemo() {
+            const input = document.getElementById('hash-input').value;
+            if (!input) {
+                document.getElementById('hash-output').textContent = 'Please enter data.';
+                return;
+            }
+            // Use SubtleCrypto for SHA-256
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                document.getElementById('hash-output').innerHTML = `<strong>SHA-256 Hash:</strong><br>${hashHex}<br><small>If data changes, hash will be completely different.</small>`;
+                progress.theory = true;
+                updateProgress();
+            });
+        }
+        
+        function showAvailabilityInfo() {
+            document.getElementById('avail-info').innerHTML = `
+                <strong>High Availability Techniques:</strong>
+                <ul>
+                    <li>Load balancers</li>
+                    <li>Redundant servers</li>
+                    <li>Regular backups</li>
+                    <li>DDoS mitigation services</li>
+                </ul>
+            `;
+        }
+        
+        // Phase descriptions
+        const phaseDescriptions = {
+            1: '<strong>Reconnaissance (Footprinting):</strong> Gathering information about target passively (OSINT) or actively. Tools: WHOIS, dig, Shodan, Google dorks.',
+            2: '<strong>Scanning & Enumeration:</strong> Identifying live hosts, open ports, services, and vulnerabilities. Tools: Nmap, Nessus, Nikto.',
+            3: '<strong>Gaining Access:</strong> Exploiting vulnerabilities to get into the system. Techniques: Password cracking, SQL injection, buffer overflows.',
+            4: '<strong>Maintaining Access:</strong> Installing backdoors, rootkits, or creating new user accounts for persistent access.',
+            5: '<strong>Covering Tracks:</strong> Deleting logs, hiding files, and removing evidence of the intrusion.'
+        };
+        
+        document.querySelectorAll('.phase').forEach(phase => {
+            phase.addEventListener('click', function() {
+                const phaseNum = this.dataset.phase;
+                document.getElementById('phase-description').innerHTML = phaseDescriptions[phaseNum];
+                document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // ==================== PRACTICAL FUNCTIONS ====================
+        
+        async function runCommand(command) {
+            const outputDiv = document.getElementById('practical-output');
+            outputDiv.textContent = `Executing: ${command}...`;
+            
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId, command: command})
+                });
+                const data = await response.json();
+                outputDiv.textContent = data.output || 'Command executed (no output)';
+                progress.practical = true;
+                updateProgress();
+            } catch (error) {
+                outputDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        function runCustomCommand() {
+            const cmd = document.getElementById('custom-command').value.trim();
+            if (cmd) runCommand(cmd);
+        }
+        
+        function openTerminal() {
+            window.open(`/terminal?session=${sessionId}`, '_blank');
+        }
+        
+        // ==================== CHALLENGE FUNCTIONS ====================
+        
+        // Simulated responses for the CTF challenge (since we can't actually query secret-company.local)
+        const challengeResponses = {
+            'whois secret-company.local': `Domain Name: SECRET-COMPANY.LOCAL
+Registry Domain ID: Not Available
+Registrar: FlagRegistrar Inc.
+Creation Date: 2023-01-15
+Registrant Contact: FLAG{WHOIS_LOOKUP_SUCCESS} (hidden for privacy)
+Name Server: NS1.SECRET-COMPANY.LOCAL`,
+            
+            'dig secret-company.local TXT': `;; ANSWER SECTION:
+secret-company.local. 3600 IN TXT "v=spf1 include:_spf.google.com ~all"
+secret-company.local. 3600 IN TXT "flag=FLAG{DNS_TXT_RECORD_FOUND}"`,
+            
+            'dig secret-company.local ANY': `;; ANSWER SECTION:
+secret-company.local. 3600 IN A 192.168.1.100
+secret-company.local. 3600 IN MX 10 mail.secret-company.local.
+secret-company.local. 3600 IN TXT "FLAG{ANY_QUERY_REVEALED}"`
+        };
+        
+        function challengeCommand(cmd) {
+            const outputDiv = document.getElementById('challenge-output');
+            const response = challengeResponses[cmd] || `Simulated response for: ${cmd}\nNo special information found.`;
+            outputDiv.textContent = response;
+        }
+        
+        function submitFlag() {
+            const flagInput = document.getElementById('flag-input').value.trim();
+            const resultDiv = document.getElementById('flag-result');
+            const validFlags = [
+                'FLAG{WHOIS_LOOKUP_SUCCESS}',
+                'FLAG{DNS_TXT_RECORD_FOUND}',
+                'FLAG{ANY_QUERY_REVEALED}'
+            ];
+            
+            if (validFlags.includes(flagInput)) {
+                resultDiv.innerHTML = '<span style="color:#00ff88;">✅ Correct! Flag accepted. Good reconnaissance work!</span>';
+                progress.challenge = true;
+                updateProgress();
+            } else {
+                resultDiv.innerHTML = '<span style="color:#ff5555;">❌ Invalid flag. Try using WHOIS or DNS TXT queries.</span>';
+            }
+        }
+        
+        // ==================== QUIZ FUNCTIONS ====================
+        
+        const quizQuestions = [
+            {
+                question: "What does the 'C' in CIA Triad stand for?",
+                options: ["Confidentiality", "Control", "Cybersecurity", "Compliance"],
+                correct: 0
+            },
+            {
+                question: "Which phase of ethical hacking involves gathering information without directly interacting with the target?",
+                options: ["Scanning", "Reconnaissance", "Gaining Access", "Covering Tracks"],
+                correct: 1
+            },
+            {
+                question: "What tool is commonly used for DNS enumeration?",
+                options: ["nmap", "dig", "netcat", "hydra"],
+                correct: 1
+            },
+            {
+                question: "What is a zero-day vulnerability?",
+                options: ["A vulnerability that has been known for 0 days", "A vulnerability unknown to the vendor", "A vulnerability fixed on day zero", "A vulnerability with zero impact"],
+                correct: 1
+            }
+        ];
+        
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            let html = '';
+            quizQuestions.forEach((q, idx) => {
+                html += `<div style="margin-bottom:20px;"><strong>${idx+1}. ${q.question}</strong><br>`;
+                q.options.forEach((opt, optIdx) => {
+                    html += `<label class="quiz-option" data-q="${idx}" data-opt="${optIdx}">
+                        <input type="radio" name="q${idx}" value="${optIdx}"> ${opt}
+                    </label>`;
+                });
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
+        
+        function checkQuiz() {
+            let score = 0;
+            quizQuestions.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+                if (selected && parseInt(selected.value) === q.correct) {
+                    score++;
+                }
+            });
+            const resultDiv = document.getElementById('quiz-result');
+            const pass = score >= 3;
+            resultDiv.innerHTML = `You scored ${score}/${quizQuestions.length}. ${pass ? '✅ Great! You understand the basics.' : '❌ Review the theory section and try again.'}`;
+            
+            if (pass) {
+                progress.quiz = true;
+                updateProgress();
+            }
+            
+            // Highlight correct/wrong (visual)
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                const qIdx = opt.dataset.q;
+                const optIdx = parseInt(opt.dataset.opt);
+                if (optIdx === quizQuestions[qIdx].correct) {
+                    opt.classList.add('correct');
+                }
+                const radio = opt.querySelector('input');
+                if (radio && radio.checked && optIdx !== quizQuestions[qIdx].correct) {
+                    opt.classList.add('wrong');
+                }
+            });
+        }
+        
+        // ==================== TAB SWITCHING ====================
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                
+                // Update active states
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                
+                // Render quiz if that tab is selected
+                if (tabId === 'quiz') renderQuiz();
+            });
+        });
+        
+        // ==================== INIT ====================
+        updateProgress();
+        
+        // Connect to existing session if any
+        async function ensureSession() {
+            try {
+                const resp = await fetch('/api/create_session', {method: 'POST'});
+                const data = await resp.json();
+                if (data.success) {
+                    sessionId = data.session_id;
+                    localStorage.setItem('lab_session_id', sessionId);
+                }
+            } catch(e) {
+                console.log('Using local session mode (no backend connection)');
+            }
+        }
+        ensureSession();
+        
+        // For demo when backend not available
+        if (typeof fetch !== 'undefined') {
+            // Override runCommand for offline demo
+            const originalRun = runCommand;
+            runCommand = function(cmd) {
+                const outputDiv = document.getElementById('practical-output');
+                outputDiv.textContent = `[Demo Mode] Simulated output for: ${cmd}\n(This would execute on the lab server)`;
+                progress.practical = true;
+                updateProgress();
+            };
+        }
+    </script>
+</body>
+</html>

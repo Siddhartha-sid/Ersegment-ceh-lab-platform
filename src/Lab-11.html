@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Denial of Service</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+            --danger: #dc3545;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            border: none;
+        }
+        .btn-danger:hover { background: #c82333; box-shadow: 0 0 15px var(--danger); }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+        .attack-type-card {
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💥 Module 10: Denial of Service (DoS/DDoS)</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Overwhelm systems and networks to disrupt legitimate access.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Types</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Attack Simulations</button>
+            <button class="tab-btn" data-tab="mitigation">🛡️ Mitigation</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📊 DoS vs DDoS</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Denial of Service (DoS):</strong> Single attacker overwhelms a target.</li>
+                        <li><strong>Distributed Denial of Service (DDoS):</strong> Multiple compromised systems (botnet) attack simultaneously.</li>
+                    </ul>
+                    <h3>Attack Categories</h3>
+                    <div class="attack-type-card">
+                        <strong>Volume-Based Attacks:</strong> Saturate bandwidth (UDP flood, ICMP flood, DNS amplification).
+                    </div>
+                    <div class="attack-type-card">
+                        <strong>Protocol Attacks:</strong> Exhaust server resources (SYN flood, Ping of Death, Smurf).
+                    </div>
+                    <div class="attack-type-card">
+                        <strong>Application-Layer Attacks:</strong> Target specific services (HTTP flood, Slowloris, RUDY).
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>🔧 Common DoS Tools</h2>
+                    <table>
+                        <tr><th>Tool</th><th>Type</th></tr>
+                        <tr><td>hping3</td><td>Custom packet crafting (SYN, ICMP, UDP floods)</td></tr>
+                        <tr><td>LOIC (Low Orbit Ion Cannon)</td><td>TCP/UDP/HTTP flooding (volunteer botnet)</td></tr>
+                        <tr><td>HOIC (High Orbit Ion Cannon)</td><td>HTTP flood with booster scripts</td></tr>
+                        <tr><td>Slowloris</td><td>Exhausts web server connection pool</td></tr>
+                        <tr><td>Xerxes</td><td>Powerful application-layer DoS</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h2>📈 Amplification Attacks</h2>
+                <p>Exploiting protocols that generate large responses to small requests:</p>
+                <table>
+                    <tr><th>Protocol</th><th>Port</th><th>Amplification Factor</th></tr>
+                    <tr><td>DNS</td><td>53</td><td>28-54x</td></tr>
+                    <tr><td>NTP</td><td>123</td><td>556x (monlist)</td></tr>
+                    <tr><td>Memcached</td><td>11211</td><td>10,000-51,000x</td></tr>
+                    <tr><td>SSDP</td><td>1900</td><td>30x</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL SIMULATIONS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧪 DoS Attack Simulator (Educational)</h2>
+                <p><strong>⚠️ Warning:</strong> These are simulations only. Launching real attacks is illegal without authorization.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🌊 Volume Attacks</h3>
+                        <button class="btn" data-dos="syn">SYN Flood (hping3)</button>
+                        <button class="btn" data-dos="udp">UDP Flood</button>
+                        <button class="btn" data-dos="icmp">ICMP Flood (Ping Flood)</button>
+                    </div>
+                    <div>
+                        <h3>🎯 Application Attacks</h3>
+                        <button class="btn" data-dos="slowloris">Slowloris</button>
+                        <button class="btn" data-dos="http">HTTP Flood (LOIC)</button>
+                        <button class="btn" data-dos="dns-amp">DNS Amplification</button>
+                    </div>
+                </div>
+                
+                <div class="terminal-box" style="min-height:200px;">
+                    <div class="terminal-output" id="dos-output">Select an attack type to see simulation output.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🤖 Botnet Command & Control Simulation</h2>
+                <p>Observe how a botnet herder issues attack commands.</p>
+                <button class="btn" data-botnet="status">Check Botnet Status</button>
+                <button class="btn" data-botnet="attack">Launch DDoS Command</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="botnet-output">Click to interact with simulated C2 server.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== MITIGATION TAB ==================== -->
+        <div id="mitigation" class="tab-content">
+            <div class="card">
+                <h2>🛡️ DoS/DDoS Mitigation Techniques</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>📋 Detection Methods</h3>
+                        <ul>
+                            <li>Baseline traffic analysis</li>
+                            <li>Anomaly detection (spikes in SYN packets, bandwidth)</li>
+                            <li>Flow data analysis (NetFlow, sFlow)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>🔧 Mitigation Strategies</h3>
+                        <ul>
+                            <li>Rate limiting (iptables, Nginx)</li>
+                            <li>SYN cookies</li>
+                            <li>Anycast network distribution</li>
+                            <li>Web Application Firewall (WAF)</li>
+                            <li>Cloud-based DDoS protection (Cloudflare, AWS Shield)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h3>🧰 Mitigation Simulation</h3>
+                <p>Apply countermeasures against a simulated attack:</p>
+                <button class="btn" data-mitigate="syn-cookie">Enable SYN Cookies</button>
+                <button class="btn" data-mitigate="rate-limit">Apply Rate Limiting</button>
+                <button class="btn" data-mitigate="blackhole">Blackhole Routing</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="mitigate-output">Click to see mitigation effects.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: DDoS Investigation</h2>
+                <p>You're a SOC analyst. A web server is under attack. Analyze logs and traffic captures to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Available Evidence:</strong></p>
+                    <ul>
+                        <li>Apache access logs (access.log)</li>
+                        <li>tcpdump capture (attack.pcap)</li>
+                        <li>Botnet C2 communication log (c2.log)</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Investigation Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="access">Analyze Access Log</button>
+                    <button class="btn" data-ctf="pcap">Examine PCAP</button>
+                    <button class="btn" data-ctf="c2">Check C2 Log</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Select evidence to analyze.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Attack Type):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (Attacker IP Range):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (C2 Server Domain):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            let sessionId = localStorage.getItem('lab10_session') || 'lab10-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab10_session', sessionId);
+            let progress = { theory: true, practical: false, mitigation: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== DOS SIMULATIONS ==========
+            const dosOutputs = {
+                syn: `hping3 -S --flood -p 80 target.com\nStarting SYN flood against target.com:80...\nSending TCP SYN packets at max speed.\nTarget may become unresponsive if not protected.\n(Simulated: millions of SYN packets sent)`,
+                udp: `hping3 --udp --flood -p 53 target.com\nUDP flood to port 53 (DNS).\nBandwidth saturation expected.\n(Simulated: 1 Gbps UDP traffic)`,
+                icmp: `hping3 --icmp --flood target.com\nICMP Echo Request flood (Ping flood).\nEach packet forces target to reply.\n(Simulated: 500,000 pings per second)`,
+                slowloris: `slowloris target.com -p 80 -s 500\n[*] Connecting to target.com:80 every 10 seconds with 500 sockets.\n[*] Keeping connections alive with partial HTTP headers.\n[*] Server connection pool exhausted. Legitimate users cannot connect.`,
+                http: `LOIC attacking http://target.com\nTCP: 80 | Threads: 500 | Method: HTTP\n[=====     ] 50% | Sent: 1,200,000 requests\nFlag found in attack string: FLAG{HTTP_FLOOD_DETECTED}`,
+                'dns-amp': `dns-amp.py --domain target.com --dns-server 8.8.8.8\n[*] Spoofing source IP to target.com\n[*] Sending ANY? queries to open resolvers.\n[*] Amplification factor: ~50x\n[*] Traffic amplified to 5 Gbps.`
+            };
+            
+            function runDos(type) {
+                document.getElementById('dos-output').textContent = dosOutputs[type] || 'Attack simulation.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Botnet C2 simulation
+            const botnetOut = {
+                status: `[Botnet C2] Status check...\nBots online: 1,247\nGeography: US(40%), EU(25%), AS(20%), Other(15%)\nAverage bandwidth per bot: 10 Mbps\nTotal attack capacity: 12.4 Gbps`,
+                attack: `[C2] > attack target.com --type http-flood --duration 300\nCommand sent to 1,247 bots.\n[Response] Bot #1012: Attacking target.com:80\n[Response] Bot #0045: Target unreachable\n[Response] Bot #0789: Flooding started\n... Attack in progress.`
+            };
+            
+            function botnetCmd(cmd) {
+                document.getElementById('botnet-output').textContent = botnetOut[cmd] || 'C2 command output.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // Mitigation
+            const mitigateOut = {
+                'syn-cookie': `sysctl -w net.ipv4.tcp_syncookies=1\nSYN cookies enabled. Server now validates SYN without allocating full connection until ACK received.\nAttack impact reduced by 80%.`,
+                'rate-limit': `iptables -A INPUT -p tcp --dport 80 -m limit --limit 25/minute --limit-burst 100 -j ACCEPT\niptables -A INPUT -p tcp --dport 80 -j DROP\nRate limiting applied. Only 25 connections per minute allowed.`,
+                blackhole: `ip route add blackhole 203.0.113.0/24\nNull-routing traffic from attacker subnet.\nPackets dropped at network edge.`
+            };
+            
+            function applyMitigation(type) {
+                document.getElementById('mitigate-output').textContent = mitigateOut[type] || 'Mitigation applied.';
+                progress.mitigation = true; updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOutputs = {
+                access: `[access.log analysis]\n203.0.113.45 - - [15/Jan/2024:10:23:01] "GET / HTTP/1.1" 200\n... repeated 50,000 times from 203.0.113.0/24 ...\nAttack type: HTTP GET flood (Layer 7 DDoS)\nFlag: FLAG{HTTP_GET_FLOOD}`,
+                pcap: `[PCAP Summary]\nTotal packets: 1,250,000\nSYN packets: 85% (SYN flood detected)\nSource IPs: majority from 198.51.100.0/24 range\nAttacker IP range: 198.51.100.0/24\nFlag: FLAG{198.51.100.0/24}`,
+                c2: `[C2 Log]\n2024-01-15 10:20:00 - Bot herder login from 192.0.2.100\n2024-01-15 10:22:15 - Command: attack target.com --http-flood\n2024-01-15 10:22:16 - C2 domain: evil-c2.ddns.net\nFlag: FLAG{EVIL_C2_DDNS_NET}`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOutputs[cmd] || 'Evidence analysis.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{HTTP_GET_FLOOD}') correct++;
+                if (f2 === 'FLAG{198.51.100.0/24}') correct++;
+                if (f3 === 'FLAG{EVIL_C2_DDNS_NET}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Excellent investigation! Attack identified.</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep analyzing!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which attack exhausts server resources by holding connections open with partial HTTP headers?", opts: ["SYN flood", "Slowloris", "UDP flood", "DNS amplification"], ans: 1 },
+                { q: "What is the primary difference between DoS and DDoS?", opts: ["Protocol used", "Number of attacking systems", "Target type", "Mitigation difficulty"], ans: 1 },
+                { q: "Which mitigation technique uses a cryptographic challenge to validate TCP connections?", opts: ["Rate limiting", "SYN cookies", "Blackhole routing", "WAF"], ans: 1 },
+                { q: "Memcached amplification can achieve what maximum amplification factor?", opts: ["10x", "50x", "1000x", "50,000x"], ans: 3 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review DoS concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-dos]').forEach(btn => btn.addEventListener('click', () => runDos(btn.dataset.dos)));
+                document.querySelectorAll('[data-botnet]').forEach(btn => btn.addEventListener('click', () => botnetCmd(btn.dataset.botnet)));
+                document.querySelectorAll('[data-mitigate]').forEach(btn => btn.addEventListener('click', () => applyMitigation(btn.dataset.mitigate)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

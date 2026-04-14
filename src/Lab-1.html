@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab 1: Login Bypass (Client‑Side)</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+        .lab-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 400px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #00ff88;
+            font-weight: 300;
+        }
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #ddd;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 1rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00ff88;
+            background: rgba(255,255,255,0.25);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff88;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #00cc6a;
+            box-shadow: 0 0 15px #00ff88;
+        }
+        .hint {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border-left: 4px solid #ffaa00;
+        }
+        .hint a {
+            color: #00ff88;
+            text-decoration: none;
+        }
+        .success-message {
+            color: #00ff88;
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        .error-message {
+            color: #ff5555;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="lab-container">
+        <h2>🔐 Admin Panel Login</h2>
+        <p style="text-align:center; opacity:0.8;">(Client‑Side Validation)</p>
+        
+        <form id="loginForm" onsubmit="return authenticate(event)">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        
+        <div id="message"></div>
+        
+        <div class="hint">
+            <strong>🧠 Lab Objective:</strong> Bypass the login using browser Developer Tools (F12).<br>
+            <small>💡 Hint: The validation logic is entirely in JavaScript. Can you find the hardcoded credentials or alter the function?</small>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        // =============================================
+        // VULNERABLE CLIENT‑SIDE AUTHENTICATION
+        // DO NOT USE IN REAL APPLICATIONS!
+        // =============================================
+        
+        // Hardcoded credentials (visible to anyone who views source)
+        const VALID_USERNAME = "admin";
+        const VALID_PASSWORD = "cyberlabs123";   // easily discoverable
+        
+        // The authentication function – can be overwritten via console!
+        function authenticate(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            // Extremely weak client-side check
+            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+                messageDiv.innerHTML = '<div class="success-message">✅ Login successful! Welcome, admin.<br>Flag: FLAG{client_side_bypass_success}</div>';
+                messageDiv.classList.remove('error-message');
+                return true;
+            } else {
+                messageDiv.innerHTML = '<div class="error-message">❌ Invalid username or password.</div>';
+                return false;
+            }
+        }
+        
+        // Additional educational console message
+        console.log("%c⚠️ SECURITY WARNING", "font-size:16px; color:orange;");
+        console.log("%cThis page uses client‑side authentication. It is intentionally vulnerable.", "font-size:14px;");
+        console.log("%cTry these bypass techniques:", "font-size:14px; color:lightblue;");
+        console.log("1. View source → find hardcoded credentials.");
+        console.log("2. In console, type: authenticate = function(e){ alert('Bypassed!'); document.getElementById('message').innerHTML='✅ Login bypassed! Flag: FLAG{console_bypass}'; return false; }");
+        console.log("3. Use breakpoints to modify the 'authenticate' function or alter the comparison.");
+    </script>
+    
+    <!-- 
+        #############################################
+        #  FOR INSTRUCTORS / STUDENT SELF‑STUDY    #
+        #############################################
+        
+        Bypass Methods:
+        
+        Method 1 – View Source:
+            - Right‑click → "View Page Source" (Ctrl+U)
+            - Look for VALID_USERNAME / VALID_PASSWORD constants.
+        
+        Method 2 – Console Override:
+            - Open Developer Tools (F12) → Console tab.
+            - Type and execute:
+                authenticate = function(e) { 
+                    e.preventDefault();
+                    document.getElementById('message').innerHTML = '✅ Bypassed! Flag: FLAG{override_success}'; 
+                    return false; 
+                }
+            - Click "Login" with any credentials.
+        
+        Method 3 – Modify Variable via Console:
+            - In Console, type:
+                VALID_PASSWORD = "anything";
+            - Then log in with username "admin" and password "anything".
+        
+        Method 4 – Debugger Manipulation:
+            - Sources tab → find the authenticate() function.
+            - Set a breakpoint on the if‑statement.
+            - When paused, change the values of username/password variables to match.
+        
+        Learning Outcome:
+            Never rely on client‑side code for security.
+            All authentication must be performed server‑side.
+    -->
+</body>
+</html>

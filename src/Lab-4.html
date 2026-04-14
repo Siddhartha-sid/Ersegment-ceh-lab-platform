@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Scanning Networks</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        .scan-type-card {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Module 3: Scanning Networks</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Discover live hosts, open ports, services, and operating systems.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Scanning Tools</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📡 Network Scanning Overview</h2>
+                    <p>Network scanning is the second phase of ethical hacking. It involves identifying live hosts, open ports, running services, and operating systems.</p>
+                    <h3>Objectives:</h3>
+                    <ul style="margin-left:20px;">
+                        <li>Discover live hosts on a network (ICMP, ARP)</li>
+                        <li>Identify open ports and services (TCP/UDP)</li>
+                        <li>Detect operating systems (fingerprinting)</li>
+                        <li>Banner grabbing for service versions</li>
+                        <li>Evade firewalls and IDS</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>⚙️ Common Scanning Techniques</h2>
+                    <div class="scan-type-card">
+                        <strong>🔹 TCP Connect Scan (-sT)</strong> — Completes full 3-way handshake. Noisy but reliable.
+                    </div>
+                    <div class="scan-type-card">
+                        <strong>🔹 SYN Stealth Scan (-sS)</strong> — Sends SYN, receives SYN-ACK, sends RST. Default for Nmap.
+                    </div>
+                    <div class="scan-type-card">
+                        <strong>🔹 UDP Scan (-sU)</strong> — Sends UDP packets, looks for ICMP unreachable or response.
+                    </div>
+                    <div class="scan-type-card">
+                        <strong>🔹 OS Detection (-O)</strong> — Fingerprints OS via TCP/IP stack behavior.
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Evasion Techniques</h2>
+                <ul style="columns:2; margin-left:20px;">
+                    <li>Fragment packets (-f)</li>
+                    <li>Use decoys (-D)</li>
+                    <li>Spoof source IP/port (-S, -g)</li>
+                    <li>Timing options (-T0 to -T5)</li>
+                    <li>Randomize scan order (--randomize-hosts)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL TAB ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧰 Nmap Scanning Simulator</h2>
+                <p>Practice Nmap commands against a simulated target: <code>scanme.local (192.168.1.100)</code></p>
+                
+                <div class="toolbar">
+                    <button class="btn" data-scan="ping">🏓 Ping Sweep</button>
+                    <button class="btn" data-scan="tcp">🔌 TCP Connect</button>
+                    <button class="btn" data-scan="syn">🥷 SYN Stealth</button>
+                    <button class="btn" data-scan="udp">📦 UDP Scan</button>
+                    <button class="btn" data-scan="os">🖥️ OS Detection</button>
+                    <button class="btn" data-scan="banner">📜 Banner Grab</button>
+                    <button class="btn btn-primary" onclick="openTerminal()">💻 Full Terminal</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="scan-output">Select a scan type to see Nmap results.</div>
+                    <div class="command-input">
+                        <input type="text" id="custom-scan" placeholder="e.g., nmap -sV scanme.local" value="nmap -sS scanme.local">
+                        <button class="btn btn-primary" id="run-custom">Run</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>📊 Interpreting Scan Results</h2>
+                <h3>Port States:</h3>
+                <ul style="margin-left:20px;">
+                    <li><strong style="color:#00ff88;">Open</strong> — Service is listening.</li>
+                    <li><strong style="color:#ffaa00;">Filtered</strong> — Firewall blocking probe.</li>
+                    <li><strong style="color:#ff5555;">Closed</strong> — No service, but host reachable.</li>
+                </ul>
+                <h3>Banner Grabbing:</h3>
+                <p>Use <code>netcat</code> or <code>nmap -sV</code> to retrieve service banners. Example: <code>nc scanme.local 22</code> might reveal SSH version.</p>
+                <div class="toolbar">
+                    <button class="btn" data-banner="ssh">SSH Banner</button>
+                    <button class="btn" data-banner="http">HTTP Banner</button>
+                    <button class="btn" data-banner="ftp">FTP Banner</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="banner-output">Click a button to simulate banner grabbing.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE TAB ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Network Scanning</h2>
+                <p>Your mission: Scan the target network <code>10.10.10.0/24</code> and the host <code>target.ctf.local</code> to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Target Information:</strong></p>
+                    <ul>
+                        <li>Flag 1: Hidden in an open port's service banner (port 1337)</li>
+                        <li>Flag 2: Found by performing a specific scan type (use SYN scan)</li>
+                        <li>Flag 3: Discovered via OS detection</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Your Scanning Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="ping">Ping Sweep</button>
+                    <button class="btn" data-ctf="syn">SYN Scan</button>
+                    <button class="btn" data-ctf="udp">UDP Scan</button>
+                    <button class="btn" data-ctf="os">OS Detection</button>
+                    <button class="btn" data-ctf="banner">Banner Grab (1337)</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Execute scans to gather intelligence on the target network.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Banner):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (SYN Scan):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (OS):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ TAB ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            // State
+            let sessionId = localStorage.getItem('lab3_session') || 'lab3-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab3_session', sessionId);
+            let progress = { theory: true, practical: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 4) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== PRACTICAL SCANS ==========
+            const scanResults = {
+                ping: `nmap -sn 192.168.1.0/24\nStarting Nmap...\nNmap scan report for 192.168.1.1 (gateway)\nHost is up (0.0012s latency).\nNmap scan report for 192.168.1.100 (scanme.local)\nHost is up (0.0034s latency).\nNmap done: 256 IP addresses (2 hosts up)`,
+                tcp: `nmap -sT scanme.local\nPORT     STATE  SERVICE\n22/tcp   open   ssh\n80/tcp   open   http\n443/tcp  closed https\n3306/tcp open   mysql`,
+                syn: `nmap -sS scanme.local\nPORT     STATE  SERVICE\n22/tcp   open   ssh\n80/tcp   open   http\n443/tcp  closed https\n3306/tcp open   mysql\n8080/tcp open   http-proxy  <-- Flag: FLAG{SYN_SCAN_FOUND_8080}`,
+                udp: `nmap -sU scanme.local\nPORT     STATE         SERVICE\n53/udp   open          domain\n123/udp  open          ntp\n161/udp  open|filtered snmp`,
+                os: `nmap -O scanme.local\nDevice type: general purpose\nRunning: Linux 3.X|4.X\nOS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4\nOS details: Linux 3.10 - 4.11\nNetwork Distance: 1 hop`,
+                banner: `nmap -sV --script=banner scanme.local\n22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)\n80/tcp   open  http    Apache httpd 2.4.6 ((CentOS))\n3306/tcp open  mysql   MySQL 5.5.68-MariaDB`
+            };
+            
+            function showScan(type) {
+                const out = document.getElementById('scan-output');
+                out.textContent = scanResults[type] || 'Scan simulation not available.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // Banner grab simulations
+            const banners = {
+                ssh: `nc scanme.local 22\nSSH-2.0-OpenSSH_7.4`,
+                http: `curl -I scanme.local\nHTTP/1.1 200 OK\nServer: Apache/2.4.6 (CentOS)`,
+                ftp: `nc scanme.local 21\n220 (vsFTPd 3.0.2)`
+            };
+            
+            function showBanner(type) {
+                document.getElementById('banner-output').textContent = banners[type] || 'Service not responding.';
+            }
+            
+            // ========== CTF CHALLENGE ==========
+            const ctfResults = {
+                ping: `Ping sweep 10.10.10.0/24...\nHost 10.10.10.15 is up.\nHost 10.10.10.20 is up (target.ctf.local).`,
+                syn: `SYN scan target.ctf.local...\nPORT     STATE  SERVICE\n22/tcp   open   ssh\n80/tcp   open   http\n1337/tcp open   custom  <-- Flag: FLAG{SYN_DISCOVERED_1337}`,
+                udp: `UDP scan target.ctf.local...\n53/udp   open   domain\n161/udp  open   snmp`,
+                os: `OS detection target.ctf.local...\nRunning: Linux 4.15\nOS details: Ubuntu 18.04\nFlag: FLAG{OS_FINGERPRINT_LINUX}`,
+                banner: `Banner grab target.ctf.local:1337...\nConnected to target.ctf.local.\nWelcome to the secret service!\nFlag: FLAG{BANNER_GRAB_1337}`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfResults[cmd] || 'No result. Try a different scan.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{BANNER_GRAB_1337}') correct++;
+                if (f2 === 'FLAG{SYN_DISCOVERED_1337}') correct++;
+                if (f3 === 'FLAG{OS_FINGERPRINT_LINUX}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! Excellent scanning skills!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep scanning!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which Nmap scan type completes the full TCP three-way handshake?", opts: ["SYN scan (-sS)", "TCP Connect (-sT)", "UDP scan (-sU)", "FIN scan (-sF)"], ans: 1 },
+                { q: "What is the default Nmap scan when run as root?", opts: ["TCP Connect", "SYN Stealth", "UDP Scan", "ACK Scan"], ans: 1 },
+                { q: "Which scan is best for detecting open UDP ports?", opts: ["-sS", "-sT", "-sU", "-sA"], ans: 2 },
+                { q: "What flag enables OS detection in Nmap?", opts: ["-O", "-oS", "-oX", "--osscan"], ans: 0 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review scanning concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            function openTerminal() { window.open(`/terminal?session=${sessionId}`, '_blank'); }
+            
+            // Attach event listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                // Practical scan buttons
+                document.querySelectorAll('[data-scan]').forEach(btn => {
+                    btn.addEventListener('click', () => showScan(btn.dataset.scan));
+                });
+                document.querySelectorAll('[data-banner]').forEach(btn => {
+                    btn.addEventListener('click', () => showBanner(btn.dataset.banner));
+                });
+                document.getElementById('run-custom').addEventListener('click', () => {
+                    const cmd = document.getElementById('custom-scan').value;
+                    document.getElementById('scan-output').textContent = `[Simulated] Executing: ${cmd}\n\n(This would run on the lab server.)`;
+                    progress.practical = true; updateProgress();
+                });
+                
+                // CTF buttons
+                document.querySelectorAll('[data-ctf]').forEach(btn => {
+                    btn.addEventListener('click', () => runCTF(btn.dataset.ctf));
+                });
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                
+                // Quiz
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                // Ensure session
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            // Expose for inline
+            window.openTerminal = openTerminal;
+        })();
+    </script>
+</body>
+</html>

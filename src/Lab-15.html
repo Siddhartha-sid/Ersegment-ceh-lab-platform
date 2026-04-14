@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Cryptography</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+        .crypto-demo {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Module 14: Cryptography</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Encryption, hashing, digital signatures, PKI, and cryptanalysis techniques.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Crypto Tools</button>
+            <button class="tab-btn" data-tab="attacks">🔓 Cryptanalysis</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>🔑 Symmetric vs Asymmetric</h2>
+                    <div class="crypto-demo">
+                        <strong>Symmetric Encryption:</strong> Same key for encryption and decryption.<br>
+                        Algorithms: AES, DES, 3DES, Blowfish, ChaCha20.<br>
+                        <em>Fast, but key distribution problem.</em>
+                    </div>
+                    <div class="crypto-demo">
+                        <strong>Asymmetric Encryption:</strong> Public key for encryption, private key for decryption.<br>
+                        Algorithms: RSA, ECC, Diffie-Hellman, ElGamal.<br>
+                        <em>Slower, but solves key exchange.</em>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>📊 Hashing & Digital Signatures</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Hash Functions:</strong> One-way fixed-length output (MD5, SHA-1, SHA-256, SHA-3).</li>
+                        <li><strong>Digital Signatures:</strong> Hash encrypted with private key for authenticity and non-repudiation.</li>
+                        <li><strong>HMAC:</strong> Keyed-hash for integrity and authentication.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🛡️ Public Key Infrastructure (PKI)</h2>
+                <table>
+                    <tr><th>Component</th><th>Purpose</th></tr>
+                    <tr><td>Certificate Authority (CA)</td><td>Issues and signs digital certificates</td></tr>
+                    <tr><td>Registration Authority (RA)</td><td>Verifies identity before certificate issuance</td></tr>
+                    <tr><td>Certificate Revocation List (CRL)</td><td>List of revoked certificates</td></tr>
+                    <tr><td>X.509</td><td>Standard format for public key certificates</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL TOOLS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧪 OpenSSL Simulation</h2>
+                <p>Practice encryption, decryption, and hashing with OpenSSL commands.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🔐 Symmetric Encryption (AES-256-CBC)</h3>
+                        <button class="btn" data-openssl="encrypt">Encrypt Message</button>
+                        <button class="btn" data-openssl="decrypt">Decrypt Message</button>
+                    </div>
+                    <div>
+                        <h3>📝 Hashing (SHA-256)</h3>
+                        <button class="btn" data-openssl="hash">Generate Hash</button>
+                        <button class="btn" data-openssl="hmac">Generate HMAC</button>
+                    </div>
+                </div>
+                <div class="toolbar">
+                    <button class="btn" data-openssl="rsa-key">Generate RSA Key Pair</button>
+                    <button class="btn" data-openssl="sign">Sign with Private Key</button>
+                    <button class="btn" data-openssl="verify">Verify Signature</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="openssl-output">Select an OpenSSL operation.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🔑 GPG/PGP Simulation</h2>
+                <button class="btn" data-gpg="encrypt">Encrypt with Public Key</button>
+                <button class="btn" data-gpg="decrypt">Decrypt with Private Key</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="gpg-output">Click to simulate GPG operations.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CRYPTANALYSIS TAB ==================== -->
+        <div id="attacks" class="tab-content">
+            <div class="card">
+                <h2>🔓 Common Cryptographic Attacks</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>🔨 Hash Cracking (John the Ripper)</h3>
+                        <button class="btn" data-attack="identify">Identify Hash Type</button>
+                        <button class="btn" data-attack="crack-md5">Crack MD5</button>
+                        <button class="btn" data-attack="crack-ntlm">Crack NTLM</button>
+                    </div>
+                    <div>
+                        <h3>🔍 Classic Ciphers</h3>
+                        <button class="btn" data-attack="caesar">Caesar Cipher (ROT13)</button>
+                        <button class="btn" data-attack="base64">Base64 Decode</button>
+                        <button class="btn" data-attack="xor">Single-byte XOR</button>
+                    </div>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="attack-output">Select a cryptanalysis technique.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Cryptography</h2>
+                <p>Decrypt messages, crack hashes, and verify signatures to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Available Assets:</strong></p>
+                    <ul>
+                        <li>Encrypted message (AES-256-CBC) with password hint</li>
+                        <li>Password hash from /etc/shadow</li>
+                        <li>Base64-encoded string</li>
+                        <li>RSA signature to verify</li>
+                    </ul>
+                </div>
+                
+                <h3>🧰 Crypto Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="decrypt">Decrypt Message</button>
+                    <button class="btn" data-ctf="crack">Crack Password Hash</button>
+                    <button class="btn" data-ctf="decode">Decode Base64</button>
+                    <button class="btn" data-ctf="verify">Verify Signature</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Use cryptographic tools to discover flags.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (Decrypted Message):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (Cracked Password):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (Decoded String):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            let sessionId = localStorage.getItem('lab14_session') || 'lab14-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab14_session', sessionId);
+            let progress = { theory: true, practical: false, attacks: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== OPENSSL SIMULATIONS ==========
+            const opensslOut = {
+                encrypt: `echo "Secret message" | openssl enc -aes-256-cbc -pbkdf2 -pass pass:MySecret123 -out encrypted.bin\nEncrypted data: U2FsdGVkX1/... (base64)\nFlag: FLAG{AES_ENCRYPTED}`,
+                decrypt: `openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:MySecret123 -in encrypted.bin\nSecret message\nFlag: FLAG{AES_DECRYPTED}`,
+                hash: `echo -n "Hello World" | openssl dgst -sha256\nSHA2-256(stdin)= a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e`,
+                hmac: `echo -n "message" | openssl dgst -sha256 -hmac "key"\nHMAC-SHA256(stdin)= 6e9ef29b75fffc5b7abae527d58fdabd2a27e4d6f0f36c9a1c0c5e0d9c5f3b9a`,
+                'rsa-key': `openssl genrsa -out private.pem 2048\nopenssl rsa -in private.pem -pubout -out public.pem\nRSA key pair generated.`,
+                sign: `openssl dgst -sha256 -sign private.pem -out signature.bin message.txt\nSignature created.`,
+                verify: `openssl dgst -sha256 -verify public.pem -signature signature.bin message.txt\nVerified OK`
+            };
+            
+            function runOpenssl(cmd) {
+                document.getElementById('openssl-output').textContent = opensslOut[cmd] || 'OpenSSL operation.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // GPG
+            const gpgOut = {
+                encrypt: `gpg --encrypt --recipient user@example.com secret.txt\nEncrypted file: secret.txt.gpg`,
+                decrypt: `gpg --decrypt secret.txt.gpg\nYou need a passphrase to unlock the secret key for user: "User"\nDecrypted: This is confidential data.`
+            };
+            
+            function runGpg(cmd) {
+                document.getElementById('gpg-output').textContent = gpgOut[cmd] || 'GPG operation.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // ========== CRYPTANALYSIS ==========
+            const attackOut = {
+                identify: `hash-identifier 5f4dcc3b5aa765d61d8327deb882cf99\nPossible Hashs:\n[+] MD5\n[+] NTLM`,
+                'crack-md5': `john --format=raw-md5 --wordlist=rockyou.txt hash.txt\nLoaded 1 password hash\npassword         (?)`,
+                'crack-ntlm': `john --format=NT hash.txt\npassword         (user)\nFlag: FLAG{NTLM_CRACKED}`,
+                caesar: `echo "Uryyb Jbeyq" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\nHello World`,
+                base64: `echo "RkxBR3tCQVNFNjRfREVDT0RFRH0=" | base64 -d\nFLAG{BASE64_DECODED}`,
+                xor: `Single-byte XOR brute-force... Key: 0x55\nDecoded: FLAG{XOR_ENCRYPTION}`
+            };
+            
+            function runAttack(cmd) {
+                document.getElementById('attack-output').textContent = attackOut[cmd] || 'Attack simulation.';
+                progress.attacks = true;
+                updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOut = {
+                decrypt: `Encrypted data: U2FsdGVkX19+... (AES-256-CBC, password hint: "company2024")\nopenssl enc -d -aes-256-cbc -pbkdf2 -pass pass:company2024 -in flag.enc\nFlag: FLAG{AES_DECRYPTION_SUCCESS}`,
+                crack: `Hash: $6$salt$IEX9Wm... (SHA-512 crypt)\njohn hash.txt --wordlist=rockyou.txt\npassword123     (user)\nFlag: FLAG{CRACKED_PASSWORD123}`,
+                decode: `Base64 string: RkxBR3tCQVNFNjRfRU5DT0RJTkd9\nDecoded: FLAG{BASE64_ENCODING}`,
+                verify: `openssl dgst -sha256 -verify public.pem -signature sig.bin message.txt\nVerified OK\nFlag: FLAG{SIGNATURE_VERIFIED}`
+            };
+            
+            function ctfAction(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOut[cmd] || 'CTF step.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{AES_DECRYPTION_SUCCESS}') correct++;
+                if (f2 === 'FLAG{CRACKED_PASSWORD123}') correct++;
+                if (f3 === 'FLAG{BASE64_ENCODING}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ All flags captured! Cryptography mastered!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep trying!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which encryption type uses the same key for encryption and decryption?", opts: ["Asymmetric", "Symmetric", "Hashing", "Digital Signature"], ans: 1 },
+                { q: "What is the purpose of a digital signature?", opts: ["Confidentiality", "Authentication and non-repudiation", "Availability", "Key exchange"], ans: 1 },
+                { q: "Which algorithm is considered a secure hashing algorithm?", opts: ["MD5", "SHA-1", "SHA-256", "DES"], ans: 2 },
+                { q: "What does PKI stand for?", opts: ["Private Key Infrastructure", "Public Key Infrastructure", "Primary Key Identifier", "Protected Key Index"], ans: 1 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review cryptography concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-openssl]').forEach(btn => btn.addEventListener('click', () => runOpenssl(btn.dataset.openssl)));
+                document.querySelectorAll('[data-gpg]').forEach(btn => btn.addEventListener('click', () => runGpg(btn.dataset.gpg)));
+                document.querySelectorAll('[data-attack]').forEach(btn => btn.addEventListener('click', () => runAttack(btn.dataset.attack)));
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => ctfAction(btn.dataset.ctf)));
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>

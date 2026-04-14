@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEH Lab: Sniffing</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg-dark: #0a0f1e;
+            --card-bg: #131b2f;
+            --text-light: #e0e0e0;
+            --border-glow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #00ff88, #00b4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        h2 {
+            color: var(--primary);
+            margin: 1.5rem 0 1rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        h3 { color: #00b4ff; margin: 1rem 0; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { box-shadow: var(--border-glow); transform: translateY(-2px); }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .btn {
+            background: #1e2a4a;
+            color: white;
+            border: 1px solid #2a3a5c;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #0a0f1e;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-primary:hover { background: #00cc6a; box-shadow: 0 0 20px #00ff88; }
+        .btn:hover { background: #2a3a5c; }
+        .terminal-box {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #30363d;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .terminal-output {
+            color: #00ff88;
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .command-input {
+            display: flex;
+            gap: 10px;
+        }
+        .command-input input {
+            flex: 1;
+            background: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .flag {
+            background: #1e2a4a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .quiz-option {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quiz-option:hover { background: #1e2a4a; }
+        .quiz-option.correct { background: #00ff8822; border-left: 4px solid #00ff88; }
+        .quiz-option.wrong { background: #ff555522; border-left: 4px solid #ff5555; }
+        .progress { margin: 20px 0; }
+        .progress-bar {
+            height: 10px;
+            background: #1e2a4a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid #2a3a5c;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #8b949e;
+            text-decoration: none;
+        }
+        .back-link:hover { color: var(--primary); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #2a3a5c;
+        }
+        th {
+            background: #1e2a4a;
+            color: var(--primary);
+        }
+        .packet-card {
+            background: #0d1117;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 Module 8: Sniffing</h1>
+        <p style="font-size:1.2rem; opacity:0.9;">Capture and analyze network traffic to extract sensitive information.</p>
+        
+        <!-- Progress Tracker -->
+        <div class="progress">
+            <span>Lab Progress: <span id="progress-text">0%</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="theory">📖 Theory & Concepts</button>
+            <button class="tab-btn" data-tab="practical">🛠️ Sniffing Tools</button>
+            <button class="tab-btn" data-tab="attack">⚡ Active Sniffing Attacks</button>
+            <button class="tab-btn" data-tab="challenge">🚩 CTF Challenge</button>
+            <button class="tab-btn" data-tab="quiz">📝 Self-Assessment</button>
+        </div>
+        
+        <!-- ==================== THEORY TAB ==================== -->
+        <div id="theory" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>📡 Passive vs Active Sniffing</h2>
+                    <ul style="margin-left:20px;">
+                        <li><strong>Passive Sniffing:</strong> Monitoring traffic on a hub or mirrored port (SPAN) without sending packets.</li>
+                        <li><strong>Active Sniffing:</strong> Injecting traffic to redirect packets (ARP spoofing, MAC flooding).</li>
+                    </ul>
+                    <h3>🛡️ Sniffing Prerequisites</h3>
+                    <ul style="margin-left:20px;">
+                        <li>Network interface in promiscuous mode</li>
+                        <li>Access to broadcast domain (same subnet)</li>
+                        <li>Tools: Wireshark, tcpdump, ettercap</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h2>🔓 Vulnerable Protocols</h2>
+                    <table>
+                        <tr><th>Protocol</th><th>Port</th><th>Data Exposed</th></tr>
+                        <tr><td>HTTP</td><td>80</td><td>Web traffic, credentials</td></tr>
+                        <tr><td>FTP</td><td>21</td><td>Login credentials, files</td></tr>
+                        <tr><td>Telnet</td><td>23</td><td>All commands and passwords</td></tr>
+                        <tr><td>SMTP</td><td>25</td><td>Email content, credentials</td></tr>
+                        <tr><td>POP3/IMAP</td><td>110/143</td><td>Email login, messages</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🧰 Common Sniffing Tools</h2>
+                <table>
+                    <tr><th>Tool</th><th>Purpose</th></tr>
+                    <tr><td>Wireshark</td><td>GUI packet analyzer</td></tr>
+                    <tr><td>tcpdump</td><td>Command-line packet capture</td></tr>
+                    <tr><td>Ettercap</td><td>MITM attacks, ARP poisoning</td></tr>
+                    <tr><td>dsniff</td><td>Password sniffer for various protocols</td></tr>
+                    <tr><td>Cain & Abel</td><td>ARP spoofing, password cracking</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- ==================== PRACTICAL TOOLS ==================== -->
+        <div id="practical" class="tab-content">
+            <div class="card">
+                <h2>🧰 Packet Capture Simulations</h2>
+                <p>Analyze captured packets to find credentials and sensitive data.</p>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>📁 Sample PCAPs</h3>
+                        <button class="btn" data-pcap="http">HTTP Login</button>
+                        <button class="btn" data-pcap="ftp">FTP Session</button>
+                        <button class="btn" data-pcap="telnet">Telnet Capture</button>
+                        <button class="btn" data-pcap="smtp">SMTP Auth</button>
+                    </div>
+                    <div>
+                        <h3>🔍 Wireshark View (Simulated)</h3>
+                        <div class="terminal-box" style="min-height:200px;">
+                            <div class="terminal-output" id="pcap-output">Select a PCAP to view packet details.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>💻 tcpdump Commands</h3>
+                <div class="toolbar">
+                    <button class="btn" data-tcpdump="basic">Basic Capture</button>
+                    <button class="btn" data-tcpdump="filter">Filter HTTP</button>
+                    <button class="btn" data-tcpdump="write">Save to File</button>
+                </div>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="tcpdump-output">Click to see tcpdump commands and output.</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>🔐 Credential Extraction (dsniff Sim)</h2>
+                <p>Automatically extract passwords from a live capture:</p>
+                <button class="btn" data-dsniff="run">Run dsniff on interface eth0</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="dsniff-output">Click to see sniffed credentials.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== ACTIVE SNIFFING ATTACKS ==================== -->
+        <div id="attack" class="tab-content">
+            <div class="card">
+                <h2>⚡ Active Sniffing / MITM Simulations</h2>
+                
+                <div class="grid-2">
+                    <div>
+                        <h3>🥷 ARP Spoofing (Ettercap)</h3>
+                        <button class="btn" data-arp="spoof">Start ARP Spoofing</button>
+                        <button class="btn" data-arp="detect">Detect ARP Spoofing</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="arp-output">Click to simulate ARP spoofing.</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>🌊 MAC Flooding</h3>
+                        <button class="btn" data-mac="flood">MAC Flood Attack</button>
+                        <button class="btn" data-mac="defend">Port Security</button>
+                        <div class="terminal-box">
+                            <div class="terminal-output" id="mac-output">Click to simulate MAC flooding.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3>🌐 DNS Spoofing</h3>
+                <button class="btn" data-dns="spoof">Redirect google.com to attacker IP</button>
+                <div class="terminal-box">
+                    <div class="terminal-output" id="dns-output">Click to simulate DNS spoofing.</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ==================== CTF CHALLENGE ==================== -->
+        <div id="challenge" class="tab-content">
+            <div class="card">
+                <h2>🚩 Capture The Flag: Packet Analysis</h2>
+                <p>You've captured a PCAP file (capture.pcap) from a compromised network. Analyze it to find three flags.</p>
+                
+                <div style="background:#0d1117; padding:15px; border-radius:8px; margin:15px 0;">
+                    <p><strong>Scenario:</strong> The network was experiencing slow performance. You suspect ARP spoofing and data exfiltration.</p>
+                </div>
+                
+                <h3>🧰 Analysis Toolkit</h3>
+                <div class="toolbar">
+                    <button class="btn" data-ctf="summary">PCAP Summary</button>
+                    <button class="btn" data-ctf="http">HTTP Stream</button>
+                    <button class="btn" data-ctf="arp">ARP Packets</button>
+                    <button class="btn" data-ctf="dns">DNS Queries</button>
+                    <button class="btn" data-ctf="ftp">FTP Traffic</button>
+                </div>
+                
+                <div class="terminal-box">
+                    <div class="terminal-output" id="ctf-output">Use the tools to analyze the capture file.</div>
+                </div>
+                
+                <h3>🎯 Submit Flags</h3>
+                <div style="display:grid; gap:15px;">
+                    <div><label>Flag 1 (HTTP Credentials):</label><input type="text" id="flag1" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 2 (ARP Attacker MAC):</label><input type="text" id="flag2" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                    <div><label>Flag 3 (FTP Password):</label><input type="text" id="flag3" placeholder="FLAG{...}" style="width:100%; padding:10px; background:#010409; border:1px solid #30363d; color:#fff; border-radius:6px;"></div>
+                </div>
+                <button class="btn btn-primary" id="submit-flags">Submit All Flags</button>
+                <div id="flag-result"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== QUIZ ==================== -->
+        <div id="quiz" class="tab-content">
+            <div class="card">
+                <h2>📝 Check Your Understanding</h2>
+                <div id="quiz-container"></div>
+                <button class="btn btn-primary" id="check-quiz">Submit Answers</button>
+                <div id="quiz-result" style="margin-top:15px;"></div>
+            </div>
+        </div>
+        
+        <a href="/Ersegment/Frontend/index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+    
+    <script>
+        (function() {
+            // State
+            let sessionId = localStorage.getItem('lab8_session') || 'lab8-' + Math.random().toString(36).substr(2,9);
+            localStorage.setItem('lab8_session', sessionId);
+            let progress = { theory: true, practical: false, attack: false, challenge: false, quiz: false };
+            
+            function updateProgress() {
+                const completed = Object.values(progress).filter(v=>v).length;
+                const percent = (completed / 5) * 100;
+                document.getElementById('progress-fill').style.width = percent + '%';
+                document.getElementById('progress-text').textContent = percent + '%';
+            }
+            
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    if (tabId === 'quiz') renderQuiz();
+                });
+            });
+            
+            // ========== PCAP SIMULATIONS ==========
+            const pcapOutputs = {
+                http: `[HTTP Stream Follow]\nGET /login.php HTTP/1.1\nHost: example.com\n\nPOST /login.php HTTP/1.1\nContent-Type: application/x-www-form-urlencoded\n\nusername=admin&password=SecretPass123\n\nFlag: FLAG{HTTP_CREDS_IN_CLEAR}`,
+                ftp: `[FTP Session]\n220 FTP server ready\nUSER ftpuser\n331 Password required\nPASS ftp_pass_123\n230 User logged in\nRETR secret.doc\n\nFlag: FLAG{FTP_PASSWORD_EXPOSED}`,
+                telnet: `[Telnet Session]\nlogin: admin\nPassword: telnet_pass\n$ ls\nsecret.txt\n$ cat secret.txt\nFlag: FLAG{TELNET_CREDS}`,
+                smtp: `[SMTP Authentication]\nEHLO client\nAUTH LOGIN\n334 VXNlcm5hbWU6\nYWRtaW4=\n334 UGFzc3dvcmQ6\nc21haWxwYXNzMTIz\n235 Authentication successful\n\nFlag: FLAG{SMTP_BASE64_CREDS}`
+            };
+            
+            function showPcap(type) {
+                document.getElementById('pcap-output').textContent = pcapOutputs[type] || 'No capture data.';
+                progress.practical = true;
+                updateProgress();
+            }
+            
+            // tcpdump commands
+            const tcpdumpOut = {
+                basic: `tcpdump -i eth0\nlistening on eth0...\n10:00:00.123 IP 192.168.1.5.54321 > 192.168.1.1.80: Flags [S], seq 123\n10:00:00.456 IP 192.168.1.1.80 > 192.168.1.5.54321: Flags [S.], seq 456`,
+                filter: `tcpdump -i eth0 port 80\nlistening on eth0...\nCapturing HTTP traffic only.\nGET / HTTP/1.1\nHost: example.com`,
+                write: `tcpdump -i eth0 -w capture.pcap\nCapturing packets to capture.pcap...\n^C\n100 packets captured\nUse Wireshark to analyze capture.pcap`
+            };
+            
+            function showTcpdump(cmd) {
+                document.getElementById('tcpdump-output').textContent = tcpdumpOut[cmd] || 'Command output.';
+                progress.practical = true; updateProgress();
+            }
+            
+            // dsniff
+            function runDsniff() {
+                document.getElementById('dsniff-output').innerHTML = `dsniff -i eth0\n-----------------\nHTTP: user=admin pass=SecretPass123 (example.com)\nFTP: USER ftpuser PASS ftp_pass_123 (192.168.1.10)\nTelnet: login: admin password: telnet_pass (192.168.1.15)\nFlag: FLAG{DSNIFF_CREDS_FOUND}`;
+                progress.practical = true; updateProgress();
+            }
+            
+            // ========== ACTIVE ATTACKS ==========
+            const arpOut = {
+                spoof: `ettercap -T -M arp:remote /192.168.1.1// /192.168.1.100//\nARP poisoning victims in GROUP 1 : 192.168.1.1 00:11:22:33:44:55\nARP poisoning victims in GROUP 2 : 192.168.1.100 AA:BB:CC:DD:EE:FF\nUnified sniffing started. All traffic forwarded through attacker.`,
+                detect: `arp -a\nInterface: 192.168.1.5\n  Internet Address      Physical Address      Type\n  192.168.1.1           00:11:22:33:44:55     dynamic\n  192.168.1.100         00:11:22:33:44:55     dynamic  <-- Duplicate MAC! ARP spoofing detected.`
+            };
+            
+            function handleArp(cmd) {
+                document.getElementById('arp-output').textContent = arpOut[cmd] || 'Output.';
+                progress.attack = true; updateProgress();
+            }
+            
+            const macOut = {
+                flood: `macof -i eth0 -s 192.168.1.1 -d 192.168.1.100\nFlooding switch with random MAC addresses...\nSwitch CAM table overflowed. Now acting as hub (all traffic visible).`,
+                defend: `Port security configured on switch.\nMaximum MAC addresses: 1\nViolation mode: shutdown\nMAC flooding attack prevented.`
+            };
+            
+            function handleMac(cmd) {
+                document.getElementById('mac-output').textContent = macOut[cmd] || 'Output.';
+                progress.attack = true; updateProgress();
+            }
+            
+            function handleDns() {
+                document.getElementById('dns-output').innerHTML = `dnsspoof -i eth0 -f hosts.txt\nRedirecting google.com -> 192.168.1.200\nVictim sees attacker's page at google.com.\nFlag: FLAG{DNS_SPOOF_DEMO}`;
+                progress.attack = true; updateProgress();
+            }
+            
+            // ========== CTF ==========
+            const ctfOutputs = {
+                summary: `[PCAP Summary]\nFile: capture.pcap\nPackets: 1250\nProtocols: TCP(80%), UDP(15%), ARP(5%)\nNotable: HTTP POST, FTP, ARP packets from MAC 00:0c:29:ab:cd:ef`,
+                http: `[HTTP Stream]\nPOST /login HTTP/1.1\nHost: internal.site\nusername=john.doe&password=Winter2024!\nFlag: FLAG{HTTP_CREDS_WINTER2024}`,
+                arp: `[ARP Packets]\nARP who-has 192.168.1.1 tell 192.168.1.5 (MAC 00:0c:29:ab:cd:ef)\nMultiple ARP replies claiming 192.168.1.1\nAttacker MAC: 00:0c:29:ab:cd:ef\nFlag: FLAG{ARP_ATTACKER_MAC}`,
+                dns: `[DNS Queries]\nA record query for evil.com\nTXT record exfil.data.evil.com (possible DNS tunneling)\nMX record for mail.evil.com`,
+                ftp: `[FTP Traffic]\nUSER backup_user\nPASS B4ckupP@ssw0rd\nRETR sensitive_data.zip\nFlag: FLAG{FTP_BACKUP_PASSWORD}`
+            };
+            
+            function runCTF(cmd) {
+                document.getElementById('ctf-output').textContent = ctfOutputs[cmd] || 'Analysis result.';
+            }
+            
+            function submitCTF() {
+                const f1 = document.getElementById('flag1').value.trim();
+                const f2 = document.getElementById('flag2').value.trim();
+                const f3 = document.getElementById('flag3').value.trim();
+                let correct = 0;
+                if (f1 === 'FLAG{HTTP_CREDS_WINTER2024}') correct++;
+                if (f2 === 'FLAG{ARP_ATTACKER_MAC}') correct++;
+                if (f3 === 'FLAG{FTP_BACKUP_PASSWORD}') correct++;
+                const res = document.getElementById('flag-result');
+                if (correct === 3) {
+                    res.innerHTML = '<span style="color:#00ff88;">✅ Congratulations! You analyzed the capture perfectly!</span>';
+                    progress.challenge = true;
+                } else {
+                    res.innerHTML = `<span style="color:#ff5555;">❌ ${correct}/3 correct. Keep analyzing!</span>`;
+                }
+                updateProgress();
+            }
+            
+            // ========== QUIZ ==========
+            const quizQuestions = [
+                { q: "Which attack causes a switch to act like a hub, allowing passive sniffing?", opts: ["ARP spoofing", "MAC flooding", "DNS poisoning", "DHCP starvation"], ans: 1 },
+                { q: "Which tool is primarily used for GUI packet analysis?", opts: ["tcpdump", "Wireshark", "dsniff", "ettercap"], ans: 1 },
+                { q: "What is the purpose of ARP spoofing?", opts: ["Redirect traffic through attacker", "Overflow switch CAM table", "Poison DNS cache", "Brute-force passwords"], ans: 0 },
+                { q: "Which protocol sends credentials in clear text, making it vulnerable to sniffing? (Choose all that apply)", opts: ["HTTP", "FTP", "Telnet", "All of the above"], ans: 3 }
+            ];
+            
+            function renderQuiz() {
+                let html = '';
+                quizQuestions.forEach((q, i) => {
+                    html += `<div><strong>${i+1}. ${q.q}</strong><br>`;
+                    q.opts.forEach((opt, j) => {
+                        html += `<label class="quiz-option"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+                    });
+                    html += '</div>';
+                });
+                document.getElementById('quiz-container').innerHTML = html;
+            }
+            
+            function checkQuiz() {
+                let score = 0;
+                quizQuestions.forEach((q, i) => {
+                    const sel = document.querySelector(`input[name="q${i}"]:checked`);
+                    if (sel && parseInt(sel.value) === q.ans) score++;
+                });
+                const res = document.getElementById('quiz-result');
+                const pass = score >= 3;
+                res.innerHTML = `Score: ${score}/${quizQuestions.length}. ${pass ? '✅ Good job!' : '❌ Review sniffing concepts.'}`;
+                if (pass) { progress.quiz = true; updateProgress(); }
+            }
+            
+            // Attach listeners
+            document.addEventListener('DOMContentLoaded', () => {
+                updateProgress();
+                
+                document.querySelectorAll('[data-pcap]').forEach(btn => btn.addEventListener('click', () => showPcap(btn.dataset.pcap)));
+                document.querySelectorAll('[data-tcpdump]').forEach(btn => btn.addEventListener('click', () => showTcpdump(btn.dataset.tcpdump)));
+                document.querySelector('[data-dsniff="run"]').addEventListener('click', runDsniff);
+                document.querySelectorAll('[data-arp]').forEach(btn => btn.addEventListener('click', () => handleArp(btn.dataset.arp)));
+                document.querySelectorAll('[data-mac]').forEach(btn => btn.addEventListener('click', () => handleMac(btn.dataset.mac)));
+                document.querySelector('[data-dns="spoof"]').addEventListener('click', handleDns);
+                document.querySelectorAll('[data-ctf]').forEach(btn => btn.addEventListener('click', () => runCTF(btn.dataset.ctf)));
+                
+                document.getElementById('submit-flags').addEventListener('click', submitCTF);
+                document.getElementById('check-quiz').addEventListener('click', checkQuiz);
+                
+                fetch('/api/create_session', {method:'POST'}).then(r=>r.json()).then(d=>{ if(d.success) sessionId=d.session_id; });
+            });
+            
+            window.openTerminal = function() { window.open(`/terminal?session=${sessionId}`, '_blank'); };
+        })();
+    </script>
+</body>
+</html>
